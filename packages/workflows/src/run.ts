@@ -11,13 +11,6 @@ export interface RunAuditInput {
   emit?: ProgressEmitter;
 }
 
-/**
- * Thin driver that runs the Mastra ASO audit workflow: it builds the run-scoped
- * context (gateway, progress emitter, result accumulator), executes the
- * workflow, and returns the assembled report. All analysis/scoring logic lives
- * in the workflow steps and the pure functions they call — this just wires
- * dependencies in and reads the result out.
- */
 export async function runAudit(input: RunAuditInput): Promise<AuditReport> {
   const ctx = createRunContext(input);
 

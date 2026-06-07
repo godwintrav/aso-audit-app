@@ -16,15 +16,6 @@ export type ProgressEmitter = (
   message?: string,
 ) => void;
 
-/**
- * Run-scoped state shared across workflow steps via Mastra's RuntimeContext.
- * It carries the injected dependencies (gateway, progress emitter), the input
- * listing, and a mutable accumulator the steps write their results into.
- *
- * Threading run-wide dependencies and accumulating state through the runtime
- * context — rather than the per-step data channel — keeps each step a thin,
- * order-independent transform and makes progress + graceful degradation easy.
- */
 export interface AuditRunContext {
   listing: AppListing;
   gateway: AnalysisGateway;
@@ -35,7 +26,6 @@ export interface AuditRunContext {
   report: AuditReport | null;
 }
 
-/** The single RuntimeContext key under which the audit context is stored. */
 export const AUDIT_CONTEXT_KEY = "auditContext";
 
 export function createRunContext(input: {

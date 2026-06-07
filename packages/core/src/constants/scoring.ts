@@ -8,14 +8,7 @@ export interface DimensionDefinition {
   description: string;
 }
 
-/**
- * The ASO scoring rubric, taken verbatim from the assignment spec.
- *
- * NOTE: the listed weights sum to 110, not 100. We treat the brief's numbers
- * as the source of truth and normalize against their actual total when
- * computing the overall score (see `computeOverallScore`), so the relative
- * importance of each dimension is preserved and the overall stays 0–100.
- */
+
 export const DIMENSION_DEFINITIONS: readonly DimensionDefinition[] = [
   {
     key: "title",

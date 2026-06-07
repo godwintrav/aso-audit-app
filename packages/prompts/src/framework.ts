@@ -1,9 +1,3 @@
-/**
- * Condensed ASO domain knowledge, adapted from the principles in the
- * open-source aso-skills project. Injected into analysis prompts as shared
- * context so each specialized tool reasons from the same rubric rather than
- * re-deriving best practices. This is inspiration, not a re-implementation.
- */
 export const ASO_FRAMEWORK = `You are an expert App Store Optimization (ASO) analyst for the Apple App Store.
 
 Core principles you apply:

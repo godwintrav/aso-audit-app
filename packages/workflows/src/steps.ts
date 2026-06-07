@@ -15,10 +15,7 @@ import { assembleReport } from "./assemble";
 import { scoreDimensions } from "./scoring";
 import { summarizeAnalyses } from "./summary";
 
-/**
- * Steps communicate through the shared run context (see context.ts), so the
- * per-step data channel is intentionally empty.
- */
+
 const StepIO = z.object({});
 
 function ctxOf(runtimeContext: RuntimeContext): AuditRunContext {
@@ -29,7 +26,6 @@ function ctxOf(runtimeContext: RuntimeContext): AuditRunContext {
   return ctx;
 }
 
-/** Analyze title, subtitle and description together (the "metadata" stage). */
 export const analyzeMetadataStep = createStep({
   id: "analyze-metadata",
   inputSchema: StepIO,

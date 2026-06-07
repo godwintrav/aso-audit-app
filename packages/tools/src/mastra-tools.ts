@@ -20,12 +20,6 @@ import {
   analyzeTitle,
 } from "./analyzers";
 
-/**
- * Mastra tool definitions, one per analysis dimension. Each is a thin,
- * declarative wrapper (id + input/output schema + execute) over the pure
- * analyzer functions, closing over the injected gateway. Keeping them small
- * and specialized — rather than one giant prompt — is the core of the design.
- */
 export function createAnalysisTools(gateway: AnalysisGateway) {
   const titleTool = createTool({
     id: "analyze-title",

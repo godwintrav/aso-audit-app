@@ -7,12 +7,6 @@ interface DimensionResult {
   summary: string;
 }
 
-/**
- * Derives a score for every one of the ten ASO dimensions. Dimensions backed
- * by an LLM analysis use that analysis's score; the remainder (keyword field,
- * video, icon, conversion, competitive position) are derived from metadata
- * heuristics so the rubric is always fully populated, even under degradation.
- */
 export function scoreDimensions(
   listing: AppListing,
   results: AnalysisResults,

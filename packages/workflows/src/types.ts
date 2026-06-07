@@ -8,11 +8,6 @@ import type {
   TitleAnalysis,
 } from "@aso/schemas";
 
-/**
- * The accumulating output of the analysis stage. Every field is nullable so a
- * single failed or data-starved analysis degrades gracefully without aborting
- * the audit.
- */
 export interface AnalysisResults {
   title: TitleAnalysis | null;
   subtitle: SubtitleAnalysis | null;

@@ -8,11 +8,7 @@ import type {
 } from "@aso/schemas";
 import type { AnalysisResults } from "./types";
 
-/**
- * Deterministically assembles the final report from the analysis results,
- * scores and recommendations. No LLM call here — the vision/text models only
- * analyze; report assembly is plain, predictable code.
- */
+
 export function assembleReport(input: {
   listing: AppListing;
   results: AnalysisResults;
@@ -65,7 +61,6 @@ function buildComparison(listing: AppListing): CompetitorComparisonRow[] {
   });
 }
 
-/** Returns how the subject's metric compares to a competitor's. */
 function compare(
   subject: number,
   competitor: number | undefined,
