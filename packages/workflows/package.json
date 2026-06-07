@@ -1,0 +1,29 @@
+{
+  "name": "@aso/workflows",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@aso/agents": "workspace:*",
+    "@aso/core": "workspace:*",
+    "@aso/prompts": "workspace:*",
+    "@aso/schemas": "workspace:*",
+    "@aso/tools": "workspace:*",
+    "@mastra/core": "^0.10.0",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2"
+  }
+}
