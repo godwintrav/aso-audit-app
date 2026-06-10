@@ -10,6 +10,11 @@ panel reads as a conversation you paste a URL, the assistant replies with a conf
 card, streams progress, then shows the report. History is persisted, so you can close the
 tab and come back to past audits later.
 
+
+Deployed Frontend URL: https://aso-audit-web.onrender.com
+Deployed Backend URL: https://aso-audit-api.onrender.com
+
+
 ## Stack
 
 - **Frontend**: Next.js (App Router), React, TailwindCSS, shadcn/ui-style components
