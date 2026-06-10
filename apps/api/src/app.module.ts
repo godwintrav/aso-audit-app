@@ -7,6 +7,7 @@ import { CacheModule } from "./cache/cache.module";
 import { APP_CONFIG, ConfigModule } from "./config/config.module";
 import type { AppConfig } from "./config/configuration";
 import { ConversationsModule } from "./conversations/conversations.module";
+import { HealthController } from "./health/health.controller";
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { ConversationsModule } from "./conversations/conversations.module";
     AppStoreModule,
     AuditModule,
   ],
+  controllers: [HealthController],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
 export class AppModule {}

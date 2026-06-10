@@ -6,6 +6,7 @@ services:
     rootDir: .
     buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm --filter "./packages/*" build && pnpm --filter @aso/api build
     startCommand: pnpm --filter @aso/api start
+    healthCheckPath: /healthz
     numInstances: 1
     envVars:
       - key: NODE_VERSION
