@@ -1,10 +1,5 @@
 import { z } from "zod";
-/**
- * Schemas for the structured output of each analysis tool. These are the
- * contracts the LLM must satisfy — every model response is validated against
- * one of these before it is allowed into the system.
- */
-/** A single observation produced by an analysis tool. */
+
 export declare const FindingSchema: z.ZodObject<{
     label: z.ZodString;
     detail: z.ZodString;
@@ -16,7 +11,6 @@ export declare const FindingSchema: z.ZodObject<{
     }>>;
 }, z.core.$strip>;
 export type Finding = z.infer<typeof FindingSchema>;
-/** Shared shape for the text-metadata analyses (title / subtitle / description). */
 export declare const TextAnalysisSchema: z.ZodObject<{
     score: z.ZodNumber;
     findings: z.ZodArray<z.ZodObject<{
@@ -77,7 +71,6 @@ export declare const DescriptionAnalysisSchema: z.ZodObject<{
     recommendations: z.ZodArray<z.ZodString>;
 }, z.core.$strip>;
 export type DescriptionAnalysis = z.infer<typeof DescriptionAnalysisSchema>;
-/** Vision analysis of the screenshot gallery (GPT-4o vision). */
 export declare const ScreenshotAnalysisSchema: z.ZodObject<{
     score: z.ZodNumber;
     strengths: z.ZodArray<z.ZodString>;
@@ -85,7 +78,6 @@ export declare const ScreenshotAnalysisSchema: z.ZodObject<{
     recommendations: z.ZodArray<z.ZodString>;
 }, z.core.$strip>;
 export type ScreenshotAnalysis = z.infer<typeof ScreenshotAnalysisSchema>;
-/** Sentiment + theme analysis of user reviews. */
 export declare const ReviewAnalysisSchema: z.ZodObject<{
     score: z.ZodNumber;
     sentiment: z.ZodEnum<{
@@ -99,7 +91,6 @@ export declare const ReviewAnalysisSchema: z.ZodObject<{
     recommendations: z.ZodArray<z.ZodString>;
 }, z.core.$strip>;
 export type ReviewAnalysis = z.infer<typeof ReviewAnalysisSchema>;
-/** Competitive positioning analysis. */
 export declare const CompetitorAnalysisSchema: z.ZodObject<{
     score: z.ZodNumber;
     strengths: z.ZodArray<z.ZodString>;
@@ -107,10 +98,7 @@ export declare const CompetitorAnalysisSchema: z.ZodObject<{
     opportunities: z.ZodArray<z.ZodString>;
 }, z.core.$strip>;
 export type CompetitorAnalysis = z.infer<typeof CompetitorAnalysisSchema>;
-/**
- * The bundle of analysis results produced by the parallel stage of the
- * workflow. Optional fields degrade gracefully when source data is missing.
- */
+
 export declare const AnalysisBundleSchema: z.ZodObject<{
     title: z.ZodObject<{
         score: z.ZodNumber;

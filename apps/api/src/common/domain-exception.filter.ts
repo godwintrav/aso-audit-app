@@ -10,10 +10,7 @@ import { InvalidAppStoreUrlError } from "@aso/core";
 import type { Response } from "express";
 import { AppNotFoundError } from "../appstore/apple-lookup.client";
 
-/**
- * Maps domain errors to meaningful HTTP responses so the API never leaks raw
- * stack traces and the client gets actionable status codes.
- */
+
 @Catch()
 export class DomainExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(DomainExceptionFilter.name);

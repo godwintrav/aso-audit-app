@@ -3,7 +3,6 @@
 import type { AuditProgressEvent, AuditStage } from "@aso/schemas";
 import { Card, CardContent } from "./ui/primitives";
 
-/** Display order + labels for the audit stages (presentation only). */
 const STAGES: { stage: AuditStage; label: string }[] = [
   { stage: "acquire_metadata", label: "Fetching app metadata" },
   { stage: "analyze_metadata", label: "Analyzing title, subtitle & description" },

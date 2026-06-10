@@ -12,8 +12,6 @@ import { ConversationsModule } from "./conversations/conversations.module";
   imports: [
     ConfigModule,
     CacheModule,
-    // Per-IP rate limiting (in-memory). Limits are applied by the global
-    // ThrottlerGuard below; read endpoints opt out via @SkipThrottle().
     ThrottlerModule.forRootAsync({
       inject: [APP_CONFIG],
       useFactory: (config: AppConfig) => ({

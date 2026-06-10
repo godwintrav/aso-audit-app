@@ -19,7 +19,6 @@ export function UrlInput({
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
     const trimmed = url.trim();
-    // Validate with the SAME rule the backend uses (@aso/core) before calling the API.
     if (!isAppStoreUrl(trimmed)) {
       setError(INVALID_MESSAGE);
       return;

@@ -11,12 +11,7 @@ import type { AppleLookupItem } from "./apple-response.schema";
 import { AppStorePageParser } from "./app-store-page.parser";
 import { FirecrawlClient } from "./firecrawl.client";
 
-/**
- * Acquires and normalizes app data from the two external sources into the
- * single `AppListing` domain model. The Apple metadata is required; the
- * Firecrawl-derived data (subtitle, reviews, competitors) is best-effort —
- * if it fails, the audit still proceeds with warnings recorded.
- */
+
 @Injectable()
 export class AppStoreService {
   private readonly logger = new Logger(AppStoreService.name);
@@ -27,7 +22,6 @@ export class AppStoreService {
     private readonly parser: AppStorePageParser,
   ) {}
 
-  /** Fast path for the confirmation card — Apple metadata only, no scraping. */
   async getPreview(url: string): Promise<AuditPreview> {
     const { appId, country, url: canonicalUrl } = parseAppStoreUrl(url);
     const item = await this.apple.lookup(appId, country);
@@ -42,7 +36,6 @@ export class AppStoreService {
     };
   }
 
-  /** Full acquisition: Apple metadata + Firecrawl content + competitor enrichment. */
   async getListing(url: string): Promise<AppListing> {
     const { appId, country, url: canonicalUrl } = parseAppStoreUrl(url);
     const item = await this.apple.lookup(appId, country);
@@ -90,7 +83,6 @@ export class AppStoreService {
       warnings,
     };
 
-    // Validate our own normalized output before it enters the workflow.
     return AppListingSchema.parse(listing);
   }
 
@@ -119,7 +111,6 @@ export class AppStoreService {
       this.logger.warn(
         `Competitor enrichment failed: ${error instanceof Error ? error.message : error}`,
       );
-      // Fall back to the names/ids we already have.
       return top.map((c) => ({ appId: c.appId, title: c.title }));
     }
   }

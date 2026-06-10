@@ -19,19 +19,11 @@ import { AuditEventsService } from "./audit-events.service";
 import { AUDIT_STORE, type IAuditStore } from "./audit.store";
 import { ANALYSIS_GATEWAY } from "./gateway.provider";
 
-/** Result of resolving a preview, including whether it came from cache. */
 export interface PreviewResult {
   preview: AuditPreview;
   cached: boolean;
 }
 
-/**
- * Orchestrates the audit lifecycle: resolve a preview, kick off a run, drive
- * the Mastra workflow, and fan progress out to the store and SSE bus. Caching
- * (via AuditCacheService) lets repeat audits of the same app be served without
- * re-spending tokens; the run still executes asynchronously so the HTTP request
- * returns immediately with an id the client can stream against.
- */
 @Injectable()
 export class AuditService {
   private readonly logger = new Logger(AuditService.name);
@@ -45,7 +37,6 @@ export class AuditService {
     @Inject(ANALYSIS_GATEWAY) private readonly gateway: AnalysisGateway,
   ) {}
 
-  /** Resolve confirmation-card data, read-through cached. */
   async preview(url: string, refresh = false): Promise<PreviewResult> {
     const cached = refresh ? undefined : this.cache.getPreview(url);
     if (cached) return { preview: cached, cached: true };
@@ -55,7 +46,6 @@ export class AuditService {
     return { preview, cached: false };
   }
 
-  /** Creates the audit record + history conversation, and starts the pipeline. */
   startRun(url: string, refresh = false, sessionId = "anonymous"): AuditRecord {
     if (refresh) this.cache.invalidate(url);
 
@@ -71,10 +61,8 @@ export class AuditService {
       updatedAt: now,
     };
     this.store.create(record);
-    // Persist a history entry ("chat") for this run, scoped to the session.
     this.conversations.create({ id: record.auditId, sessionId, url });
 
-    // Fire-and-forget; failures are captured onto the record + conversation.
     void this.runPipeline(record.auditId, url);
     return record;
   }
@@ -89,8 +77,6 @@ export class AuditService {
 
   private async runPipeline(auditId: string, url: string): Promise<void> {
     try {
-      // Fast path: a fresh report for this app short-circuits the whole
-      // pipeline — no acquisition, no LLM calls, zero tokens spent.
       const cachedReport = this.cache.getReport(url);
       if (cachedReport) {
         this.completeFromCache(auditId, url, cachedReport);
@@ -98,7 +84,7 @@ export class AuditService {
       }
 
       this.publish(auditId, "acquire_metadata", "started");
-      // Listing acquisition is cached + de-duplicated across concurrent runs.
+
       const listing = await this.cache.getOrCompute(
         "listing",
         url,
@@ -130,7 +116,6 @@ export class AuditService {
     }
   }
 
-  /** Marks an audit complete from a cached report, with a fully-ticked stream. */
   private completeFromCache(auditId: string, url: string, report: AuditReport): void {
     const preview = this.previewFromReport(url, report);
     this.store.update(auditId, { preview });

@@ -6,7 +6,6 @@ const app_listing_1 = require("./app-listing");
 const analysis_1 = require("./analysis");
 const scoring_1 = require("./scoring");
 const recommendation_1 = require("./recommendation");
-/** Lightweight summary of the audited app, embedded in the report. */
 exports.AppSummarySchema = zod_1.z.object({
     appId: zod_1.z.string(),
     title: zod_1.z.string(),
@@ -17,14 +16,12 @@ exports.AppSummarySchema = zod_1.z.object({
     rating: zod_1.z.number(),
     ratingCount: zod_1.z.number().int().nonnegative(),
 });
-/** One row of the competitor comparison table. */
 exports.CompetitorComparisonRowSchema = zod_1.z.object({
     competitor: app_listing_1.CompetitorSchema,
     positioning: zod_1.z.string(),
     metadataQuality: zod_1.z.enum(["weaker", "comparable", "stronger"]),
     screenshotQuality: zod_1.z.enum(["weaker", "comparable", "stronger"]),
 });
-/** The final, fully-assembled audit report returned to the frontend. */
 exports.AuditReportSchema = zod_1.z.object({
     appId: zod_1.z.string(),
     app: exports.AppSummarySchema,
@@ -39,4 +36,3 @@ exports.AuditReportSchema = zod_1.z.object({
     warnings: zod_1.z.array(zod_1.z.string()),
     generatedAt: zod_1.z.string(),
 });
-//# sourceMappingURL=report.js.map

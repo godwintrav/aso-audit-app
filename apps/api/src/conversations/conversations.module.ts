@@ -10,11 +10,6 @@ import {
 } from "./conversation.store";
 import { ConversationsController } from "./conversations.controller";
 
-/**
- * Persists audit history behind a swappable `IConversationStore`. Defaults to a
- * JSON-file store (survives restarts); `HISTORY_PERSISTENCE=memory` swaps in the
- * in-memory store. `ConversationService` is exported for the audit lifecycle.
- */
 @Module({
   controllers: [ConversationsController],
   providers: [

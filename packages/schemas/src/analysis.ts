@@ -1,12 +1,6 @@
 import { z } from "zod";
 
-/**
- * Schemas for the structured output of each analysis tool. These are the
- * contracts the LLM must satisfy — every model response is validated against
- * one of these before it is allowed into the system.
- */
 
-/** A single observation produced by an analysis tool. */
 export const FindingSchema = z.object({
   label: z.string(),
   detail: z.string(),
@@ -14,7 +8,6 @@ export const FindingSchema = z.object({
 });
 export type Finding = z.infer<typeof FindingSchema>;
 
-/** Shared shape for the text-metadata analyses (title / subtitle / description). */
 export const TextAnalysisSchema = z.object({
   score: z.number().min(0).max(100),
   findings: z.array(FindingSchema),
@@ -31,7 +24,6 @@ export type SubtitleAnalysis = z.infer<typeof SubtitleAnalysisSchema>;
 export const DescriptionAnalysisSchema = TextAnalysisSchema;
 export type DescriptionAnalysis = z.infer<typeof DescriptionAnalysisSchema>;
 
-/** Vision analysis of the screenshot gallery (GPT-4o vision). */
 export const ScreenshotAnalysisSchema = z.object({
   score: z.number().min(0).max(100),
   strengths: z.array(z.string()),
@@ -40,7 +32,6 @@ export const ScreenshotAnalysisSchema = z.object({
 });
 export type ScreenshotAnalysis = z.infer<typeof ScreenshotAnalysisSchema>;
 
-/** Sentiment + theme analysis of user reviews. */
 export const ReviewAnalysisSchema = z.object({
   score: z.number().min(0).max(100),
   sentiment: z.enum(["positive", "mixed", "negative"]),
@@ -51,7 +42,6 @@ export const ReviewAnalysisSchema = z.object({
 });
 export type ReviewAnalysis = z.infer<typeof ReviewAnalysisSchema>;
 
-/** Competitive positioning analysis. */
 export const CompetitorAnalysisSchema = z.object({
   score: z.number().min(0).max(100),
   strengths: z.array(z.string()),
@@ -60,10 +50,6 @@ export const CompetitorAnalysisSchema = z.object({
 });
 export type CompetitorAnalysis = z.infer<typeof CompetitorAnalysisSchema>;
 
-/**
- * The bundle of analysis results produced by the parallel stage of the
- * workflow. Optional fields degrade gracefully when source data is missing.
- */
 export const AnalysisBundleSchema = z.object({
   title: TitleAnalysisSchema,
   subtitle: SubtitleAnalysisSchema.nullable(),

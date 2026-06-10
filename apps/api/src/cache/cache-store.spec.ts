@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { InMemoryCacheStore } from "./cache-store";
 
-/** A controllable clock so TTL behavior is deterministic (no real sleeping). */
 function clock(start = 1_000) {
   let t = start;
   return { now: () => t, advance: (ms: number) => (t += ms) };
@@ -21,15 +20,15 @@ describe("InMemoryCacheStore", () => {
     store.set("k", "v", 1_000);
     c.advance(1_001);
     expect(store.get("k")).toBeUndefined();
-    expect(store.size()).toBe(0); // expired entry is purged on read
+    expect(store.size()).toBe(0);
   });
 
   it("evicts the least-recently-used entry past maxEntries", () => {
     const store = new InMemoryCacheStore({ maxEntries: 2 });
     store.set("a", 1, 10_000);
     store.set("b", 2, 10_000);
-    store.get("a"); // touch 'a' so 'b' becomes least-recently-used
-    store.set("c", 3, 10_000); // exceeds max → evicts 'b'
+    store.get("a");
+    store.set("c", 3, 10_000);
 
     expect(store.get("a")).toBe(1);
     expect(store.get("c")).toBe(3);

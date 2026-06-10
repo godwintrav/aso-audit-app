@@ -11,7 +11,6 @@ import { useConversations } from "@/lib/use-conversations";
 export default function Home() {
   const { conversations, loading, refresh, remove } = useConversations();
 
-  // `activeId === null` → the live "new audit" composer/flow.
   const [activeId, setActiveId] = useState<string | null>(null);
   const [activeConversation, setActiveConversation] = useState<Conversation | null>(null);
   const [loadingConversation, setLoadingConversation] = useState(false);
@@ -26,11 +25,11 @@ export default function Home() {
   }, []);
 
   const audit = useAudit({
-    onRunStarted: () => void refresh(), // surface the new (running) thread in the sidebar
+    onRunStarted: () => void refresh(),
     onRunFinished: (id) => {
       void refresh();
       setActiveId(id);
-      void loadConversation(id); // switch to the saved conversation once complete
+      void loadConversation(id);
     },
   });
 

@@ -3,7 +3,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuditRecordSchema = exports.AuditProgressEventSchema = exports.AuditStatusSchema = exports.AuditStageSchema = exports.AuditPreviewSchema = void 0;
 const zod_1 = require("zod");
 const report_1 = require("./report");
-/** Returned by POST /audit/preview — the data for the confirmation card. */
 exports.AuditPreviewSchema = zod_1.z.object({
     appId: zod_1.z.string(),
     country: zod_1.z.string(),
@@ -13,7 +12,7 @@ exports.AuditPreviewSchema = zod_1.z.object({
     category: zod_1.z.string(),
     iconUrl: zod_1.z.string().url(),
 });
-/** The canonical, ordered stages of an audit run (acquisition + workflow). */
+
 exports.AuditStageSchema = zod_1.z.enum([
     "acquire_metadata",
     "analyze_metadata",
@@ -30,7 +29,6 @@ exports.AuditStatusSchema = zod_1.z.enum([
     "completed",
     "failed",
 ]);
-/** A single progress event streamed over SSE. */
 exports.AuditProgressEventSchema = zod_1.z.object({
     auditId: zod_1.z.string(),
     stage: exports.AuditStageSchema,
@@ -39,7 +37,6 @@ exports.AuditProgressEventSchema = zod_1.z.object({
     message: zod_1.z.string().optional(),
     at: zod_1.z.string(),
 });
-/** The full state of an audit, held in the AuditStore and exposed via GET /audit/:id. */
 exports.AuditRecordSchema = zod_1.z.object({
     auditId: zod_1.z.string(),
     status: exports.AuditStatusSchema,
@@ -50,4 +47,3 @@ exports.AuditRecordSchema = zod_1.z.object({
     createdAt: zod_1.z.string(),
     updatedAt: zod_1.z.string(),
 });
-//# sourceMappingURL=audit.js.map

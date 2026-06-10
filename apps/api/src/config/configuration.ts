@@ -3,16 +3,15 @@ import { resolve } from "node:path";
 import * as dotenv from "dotenv";
 import { z } from "zod";
 
-/**
- * Loads and validates environment configuration. The .env lives at the repo
- * root; we resolve it robustly whether the process is started from the repo
- * root or from apps/api. Validation fails fast at boot so misconfiguration is
- * surfaced immediately rather than at the first request.
- */
+
 const EnvSchema = z.object({
   OPENAI_API_KEY: z.string().min(1, "OPENAI_API_KEY is required"),
   FIRECRAWL_API_KEY: z.string().min(1, "FIRECRAWL_API_KEY is required"),
-  API_PORT: z.coerce.number().int().positive().default(3001),
+  API_PORT: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(process.env.PORT ? Number(process.env.PORT) : 3001),
   WEB_ORIGIN: z.string().default("http://localhost:3000"),
   ASO_TEXT_MODEL: z.string().default("gpt-4o"),
   ASO_VISION_MODEL: z.string().default("gpt-4o"),
@@ -58,7 +57,6 @@ function loadDotEnv(): void {
       return;
     }
   }
-  // Fall back to default lookup (process env may already be populated).
   dotenv.config();
 }
 

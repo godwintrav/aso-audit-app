@@ -31,11 +31,6 @@ import {
   TitleAnalysisSchema,
 } from "@aso/schemas";
 
-/**
- * Pure analysis functions. Each delegates the LLM call to the injected
- * `AnalysisGateway` (which validates output against the schema) and is fully
- * testable with a stub gateway — no Mastra dependency here.
- */
 
 export function analyzeTitle(
   gateway: AnalysisGateway,

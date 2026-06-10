@@ -4,7 +4,6 @@ import { useCallback, useEffect, useState } from "react";
 import type { ConversationSummary } from "@aso/schemas";
 import { deleteConversation, getConversations } from "./api";
 
-/** Loads and maintains the session's audit history for the sidebar. */
 export function useConversations() {
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -13,7 +12,6 @@ export function useConversations() {
     try {
       setConversations(await getConversations());
     } catch {
-      /* leave the current list in place on transient errors */
     } finally {
       setLoading(false);
     }

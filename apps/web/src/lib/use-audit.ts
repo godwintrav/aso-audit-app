@@ -37,13 +37,10 @@ const INITIAL: AuditState = {
 };
 
 export interface UseAuditOptions {
-  /** Fired when a run is accepted (id known) — used to surface it in history. */
   onRunStarted?: (auditId: string) => void;
-  /** Fired when a run reaches a terminal state (completed or failed). */
   onRunFinished?: (auditId: string) => void;
 }
 
-/** Drives a single live audit: preview → confirm → stream → report. */
 export function useAudit(options: UseAuditOptions = {}) {
   const [state, setState] = useState<AuditState>(INITIAL);
   const stateRef = useRef(state);

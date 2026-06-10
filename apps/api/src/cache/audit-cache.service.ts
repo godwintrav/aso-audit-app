@@ -15,19 +15,9 @@ import { CACHE_STORE, type ICacheStore } from "./cache-store";
 
 type Namespace = "report" | "listing" | "preview";
 
-/**
- * Typed, domain-facing cache for the audit pipeline. It owns the caching
- * policy (key derivation, TTL, validation, in-flight de-duplication) so the
- * acquisition/orchestration services stay free of caching concerns.
- *
- * Every cached value is RE-VALIDATED with its Zod schema on read: a corrupt or
- * shape-drifted entry is dropped rather than trusted — the same "never trust
- * data crossing a boundary" rule we apply to external APIs.
- */
 @Injectable()
 export class AuditCacheService {
   private readonly logger = new Logger(AuditCacheService.name);
-  /** Shared promises for computations currently in flight, keyed by cache key. */
   private readonly inFlight = new Map<string, Promise<unknown>>();
 
   constructor(
@@ -35,7 +25,6 @@ export class AuditCacheService {
     @Inject(APP_CONFIG) private readonly config: AppConfig,
   ) {}
 
-  /** Normalizes any App Store URL for a given storefront to a stable cache key. */
   keyFor(url: string): string {
     const { appId, country } = parseAppStoreUrl(url);
     return `${appId}:${country}`;
@@ -62,12 +51,6 @@ export class AuditCacheService {
     this.write("preview", url, preview);
   }
 
-  /**
-   * Read-through with single-flight: returns a cached value, an in-flight
-   * computation's result, or runs `factory` once and caches it. Concurrent
-   * callers for the same key share one computation — so duplicate requests
-   * never spend tokens/credits twice.
-   */
   async getOrCompute<T>(
     namespace: Namespace,
     url: string,
@@ -97,7 +80,6 @@ export class AuditCacheService {
     return promise;
   }
 
-  /** Invalidate every namespace for an app (used by `refresh`). */
   invalidate(url: string): void {
     const key = this.keyFor(url);
     for (const ns of ["report", "listing", "preview"] as Namespace[]) {

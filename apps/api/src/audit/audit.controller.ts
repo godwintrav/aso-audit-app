@@ -22,7 +22,6 @@ import {
 } from "./audit.dto";
 import { AuditService } from "./audit.service";
 
-/** SSE message envelope Nest serializes to the `data:` field. */
 interface SseMessage {
   data: AuditProgressEvent;
 }
@@ -31,7 +30,6 @@ interface SseMessage {
 export class AuditController {
   constructor(private readonly audit: AuditService) {}
 
-  /** Resolve a URL to confirmation-card data (cached). */
   @Post("preview")
   @HttpCode(200)
   async preview(
@@ -43,7 +41,6 @@ export class AuditController {
     return preview;
   }
 
-  /** Start a full audit; returns immediately with an id to stream against. */
   @Post("run")
   @HttpCode(202)
   run(
@@ -54,7 +51,6 @@ export class AuditController {
     return { auditId: record.auditId };
   }
 
-  /** Fetch the current status / final report. Polled by the client — not rate-limited. */
   @SkipThrottle()
   @Get(":id")
   get(
@@ -65,7 +61,6 @@ export class AuditController {
     return record;
   }
 
-  /** Stream live progress events over Server-Sent Events. Long-lived — not rate-limited. */
   @SkipThrottle()
   @Sse(":id/stream")
   stream(

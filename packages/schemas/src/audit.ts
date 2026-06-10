@@ -1,7 +1,6 @@
 import { z } from "zod";
 import { AuditReportSchema } from "./report";
 
-/** Returned by POST /audit/preview — the data for the confirmation card. */
 export const AuditPreviewSchema = z.object({
   appId: z.string(),
   country: z.string(),
@@ -13,7 +12,7 @@ export const AuditPreviewSchema = z.object({
 });
 export type AuditPreview = z.infer<typeof AuditPreviewSchema>;
 
-/** The canonical, ordered stages of an audit run (acquisition + workflow). */
+
 export const AuditStageSchema = z.enum([
   "acquire_metadata",
   "analyze_metadata",
@@ -34,7 +33,6 @@ export const AuditStatusSchema = z.enum([
 ]);
 export type AuditStatus = z.infer<typeof AuditStatusSchema>;
 
-/** A single progress event streamed over SSE. */
 export const AuditProgressEventSchema = z.object({
   auditId: z.string(),
   stage: AuditStageSchema,
@@ -45,7 +43,6 @@ export const AuditProgressEventSchema = z.object({
 });
 export type AuditProgressEvent = z.infer<typeof AuditProgressEventSchema>;
 
-/** The full state of an audit, held in the AuditStore and exposed via GET /audit/:id. */
 export const AuditRecordSchema = z.object({
   auditId: z.string(),
   status: AuditStatusSchema,

@@ -7,12 +7,6 @@ import type {
 } from "@aso/schemas";
 import { getSessionId } from "./session";
 
-/**
- * Typed client for the ASO Audit API. Requests are proxied through Next's
- * /api rewrite to the NestJS backend. Every request carries the anonymous
- * session id so history is scoped per browser. The frontend depends only on
- * the shared domain types — never on backend internals.
- */
 const BASE = "/api";
 
 function headers(extra?: Record<string, string>): HeadersInit {
@@ -38,7 +32,6 @@ async function getJson<T>(path: string): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-// --- Audit flow ---
 
 export function previewApp(url: string): Promise<AuditPreview> {
   return postJson<AuditPreview>("/audit/preview", { url });
@@ -52,7 +45,6 @@ export function getAudit(auditId: string): Promise<AuditRecord> {
   return getJson<AuditRecord>(`/audit/${auditId}`);
 }
 
-/** Subscribes to the SSE progress stream. Returns an unsubscribe function. */
 export function streamAudit(
   auditId: string,
   handlers: {
@@ -65,14 +57,12 @@ export function streamAudit(
     try {
       handlers.onEvent(JSON.parse(msg.data) as AuditProgressEvent);
     } catch {
-      /* ignore malformed frames */
     }
   };
   source.onerror = () => handlers.onError?.();
   return () => source.close();
 }
 
-// --- History ("previous chats") ---
 
 export function getConversations(): Promise<ConversationSummary[]> {
   return getJson<ConversationSummary[]>("/conversations");

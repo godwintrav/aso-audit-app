@@ -8,11 +8,6 @@ import {
 } from "@aso/schemas";
 import { CONVERSATION_STORE, type IConversationStore } from "./conversation.store";
 
-/**
- * Owns the audit-history lifecycle and policy (session scoping, titles,
- * validation), keeping the orchestration/acquisition services free of
- * persistence concerns. Every write is schema-validated before it is stored.
- */
 @Injectable()
 export class ConversationService {
   private readonly logger = new Logger(ConversationService.name);
@@ -21,7 +16,6 @@ export class ConversationService {
     @Inject(CONVERSATION_STORE) private readonly store: IConversationStore,
   ) {}
 
-  /** Called when an audit run starts. */
   create(input: { id: string; sessionId: string; url: string }): Conversation {
     const now = new Date().toISOString();
     return this.save({
@@ -38,7 +32,6 @@ export class ConversationService {
     });
   }
 
-  /** Sets the confirmation preview and a human title once metadata is known. */
   attachPreview(id: string, preview: AuditPreview): void {
     this.patch(id, (c) => ({ ...c, preview, title: preview.title }));
   }
@@ -67,7 +60,6 @@ export class ConversationService {
     }));
   }
 
-  /** Session-guarded read — a conversation is only visible to its owner. */
   get(id: string, sessionId: string): Conversation | undefined {
     const conversation = this.store.get(id);
     if (!conversation || conversation.sessionId !== sessionId) return undefined;

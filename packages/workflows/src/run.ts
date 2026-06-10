@@ -7,7 +7,6 @@ import { asoAuditWorkflow } from "./workflow";
 export interface RunAuditInput {
   listing: AppListing;
   gateway: AnalysisGateway;
-  /** Called as each stage starts/completes/fails — wire this to SSE. */
   emit?: ProgressEmitter;
 }
 

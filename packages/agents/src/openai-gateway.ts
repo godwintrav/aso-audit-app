@@ -4,23 +4,11 @@ import type { AnalysisGateway, GenerateStructuredInput } from "./gateway";
 
 export interface OpenAIGatewayConfig {
   apiKey: string;
-  /** Model used for text analyses. Defaults to gpt-4o. */
   textModel?: string;
-  /** Model used for vision analyses. Defaults to gpt-4o. */
   visionModel?: string;
-  /**
-   * Retries per structured-output call. Covers both transient OpenAI errors
-   * and the occasional schema-invalid response (the AI SDK re-asks the model).
-   * Defaults to 3.
-   */
   maxRetries?: number;
 }
 
-/**
- * Production gateway backed by OpenAI via the Vercel AI SDK. Uses
- * `generateObject` so the model is constrained to the provided Zod schema and
- * the result is validated before it is returned — never raw model output.
- */
 export class OpenAIAnalysisGateway implements AnalysisGateway {
   private readonly openai: OpenAIProvider;
   private readonly textModel: string;
@@ -50,10 +38,6 @@ export class OpenAIAnalysisGateway implements AnalysisGateway {
       },
     ];
 
-    // `generateObject`'s own `maxRetries` only covers transient transport
-    // errors (429/5xx/timeout). It does NOT re-ask the model when the response
-    // fails schema validation — common for heavy schemas (recommendations) on
-    // data-sparse apps. So we additionally re-generate on validation failures.
     let lastError: unknown;
     for (let attempt = 0; attempt <= this.maxRetries; attempt++) {
       try {

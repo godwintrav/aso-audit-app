@@ -1,8 +1,4 @@
 import { z } from "zod";
-/**
- * The ten ASO scoring dimensions. Kept here (next to the schema that uses
- * them) so the schema package stays self-contained; weights live in @aso/core.
- */
 export declare const DimensionKeySchema: z.ZodEnum<{
     title: "title";
     subtitle: "subtitle";

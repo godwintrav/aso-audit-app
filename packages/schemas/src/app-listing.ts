@@ -1,8 +1,6 @@
 import { z } from "zod";
 
-/**
- * A single user review, normalized from the Firecrawl App Store markdown.
- */
+
 export const ReviewSchema = z.object({
   title: z.string().optional(),
   body: z.string(),
@@ -10,10 +8,7 @@ export const ReviewSchema = z.object({
 });
 export type Review = z.infer<typeof ReviewSchema>;
 
-/**
- * A competitor app surfaced from the "You Might Also Like" section and
- * enriched with metadata from the iTunes Lookup API.
- */
+
 export const CompetitorSchema = z.object({
   appId: z.string(),
   title: z.string(),
@@ -26,10 +21,7 @@ export const CompetitorSchema = z.object({
 });
 export type Competitor = z.infer<typeof CompetitorSchema>;
 
-/**
- * The unified internal domain model. Every downstream system (workflow,
- * tools, API responses) consumes this — never a raw Apple or Firecrawl shape.
- */
+
 export const AppListingSchema = z.object({
   appId: z.string(),
   country: z.string(),
@@ -54,11 +46,7 @@ export const AppListingSchema = z.object({
   reviews: z.array(ReviewSchema),
   competitors: z.array(CompetitorSchema),
 
-  /**
-   * Non-fatal issues encountered while acquiring data (e.g. Firecrawl failed,
-   * so reviews/subtitle/competitors are missing). Surfaced in the report so
-   * the user understands why a dimension may be scored conservatively.
-   */
+
   warnings: z.array(z.string()).default([]),
 });
 export type AppListing = z.infer<typeof AppListingSchema>;

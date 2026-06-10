@@ -59,9 +59,9 @@ describe("ConversationService", () => {
     const svc = makeService();
     svc.create({ id: "c1", sessionId: "s1", url: preview.url });
 
-    expect(svc.get("c1", "s2")).toBeUndefined(); // foreign session can't read
+    expect(svc.get("c1", "s2")).toBeUndefined();
     expect(svc.list("s2")).toHaveLength(0);
-    expect(svc.remove("c1", "s2")).toBe(false); // nor delete
+    expect(svc.remove("c1", "s2")).toBe(false);
     expect(svc.remove("c1", "s1")).toBe(true);
     expect(svc.list("s1")).toHaveLength(0);
   });

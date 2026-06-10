@@ -20,14 +20,12 @@ describe("computeOverallScore", () => {
   });
 
   it("normalizes by total weight (handles the brief's 110 total)", () => {
-    // All dimensions scoring 80 → overall 80 regardless of weight total.
     const dims = DIMENSION_DEFINITIONS.map((d) => dim(80, d.weight));
     expect(computeOverallScore(dims)).toBe(80);
   });
 
   it("weights higher-weight dimensions more heavily", () => {
     const dims = [dim(100, 20), dim(0, 5)];
-    // (100*20 + 0*5) / 25 = 80
     expect(computeOverallScore(dims)).toBe(80);
   });
 

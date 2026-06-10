@@ -15,7 +15,6 @@ Core principles you apply:
 - Be specific and evidence-driven. Cite the actual text or attribute you are
   judging. Never give generic advice that could apply to any app.`;
 
-/** A scoring scale reminder shared by every analysis prompt. */
 export const SCORE_SCALE = `Score on a 0-100 scale where:
 - 90-100: excellent, follows ASO best practices closely
 - 70-89: good, minor improvements available

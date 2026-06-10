@@ -1,17 +1,12 @@
 import { z } from "zod";
-/**
- * A single user review, normalized from the Firecrawl App Store markdown.
- */
+
 export declare const ReviewSchema: z.ZodObject<{
     title: z.ZodOptional<z.ZodString>;
     body: z.ZodString;
     rating: z.ZodOptional<z.ZodNumber>;
 }, z.core.$strip>;
 export type Review = z.infer<typeof ReviewSchema>;
-/**
- * A competitor app surfaced from the "You Might Also Like" section and
- * enriched with metadata from the iTunes Lookup API.
- */
+
 export declare const CompetitorSchema: z.ZodObject<{
     appId: z.ZodString;
     title: z.ZodString;
@@ -23,10 +18,7 @@ export declare const CompetitorSchema: z.ZodObject<{
     screenshotCount: z.ZodOptional<z.ZodNumber>;
 }, z.core.$strip>;
 export type Competitor = z.infer<typeof CompetitorSchema>;
-/**
- * The unified internal domain model. Every downstream system (workflow,
- * tools, API responses) consumes this — never a raw Apple or Firecrawl shape.
- */
+
 export declare const AppListingSchema: z.ZodObject<{
     appId: z.ZodString;
     country: z.ZodString;

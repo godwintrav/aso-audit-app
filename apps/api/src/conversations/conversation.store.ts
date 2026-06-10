@@ -4,12 +4,6 @@ import { dirname } from "node:path";
 import { Logger } from "@nestjs/common";
 import { type Conversation, ConversationSchema } from "@aso/schemas";
 
-/**
- * Persistence abstraction for audit conversations (history). The JSON-file
- * implementation survives restarts and is sufficient for a single node; the
- * interface lets a DB/Redis store replace it later with zero call-site changes
- * — mirroring `IAuditStore` / `ICacheStore`.
- */
 export interface IConversationStore {
   list(sessionId: string): Conversation[];
   get(id: string): Conversation | undefined;
@@ -19,7 +13,6 @@ export interface IConversationStore {
 
 export const CONVERSATION_STORE = Symbol("CONVERSATION_STORE");
 
-/** Newest-first by creation time. */
 function byNewest(a: Conversation, b: Conversation): number {
   return b.createdAt.localeCompare(a.createdAt);
 }
@@ -48,26 +41,18 @@ abstract class BaseConversationStore implements IConversationStore {
     if (this.conversations.delete(id)) this.persist();
   }
 
-  /** Keep at most `maxPerSession` per session, dropping the oldest. */
   private evict(sessionId: string): void {
-    const owned = this.list(sessionId); // newest-first
+    const owned = this.list(sessionId);
     for (const stale of owned.slice(this.maxPerSession)) {
       this.conversations.delete(stale.id);
     }
   }
 
-  /** Overridden by the file store; in-memory is a no-op. */
   protected persist(): void {}
 }
 
-/** In-memory store — used in tests and when `HISTORY_PERSISTENCE=memory`. */
 export class InMemoryConversationStore extends BaseConversationStore {}
 
-/**
- * JSON-file-backed store. Loads once on construction; every mutation is
- * write-through persisted via an atomic temp-file + rename, with writes
- * serialized on a chain so concurrent mutations never clobber the file.
- */
 export class JsonFileConversationStore extends BaseConversationStore {
   private readonly logger = new Logger(JsonFileConversationStore.name);
   private writeChain: Promise<void> = Promise.resolve();
@@ -105,7 +90,6 @@ export class JsonFileConversationStore extends BaseConversationStore {
 
   protected override persist(): void {
     const snapshot = JSON.stringify([...this.conversations.values()], null, 2);
-    // Serialize writes; an atomic rename means readers never see a partial file.
     this.writeChain = this.writeChain
       .then(async () => {
         mkdirSync(dirname(this.filePath), { recursive: true });
@@ -120,7 +104,6 @@ export class JsonFileConversationStore extends BaseConversationStore {
       });
   }
 
-  /** Test/shutdown hook: await all pending writes. */
   flush(): Promise<void> {
     return this.writeChain;
   }

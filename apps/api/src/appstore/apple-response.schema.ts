@@ -1,10 +1,5 @@
 import { z } from "zod";
 
-/**
- * Schema for a single item from the iTunes Lookup/Search API. We validate the
- * fields we consume and ignore the rest; an invalid shape is rejected at the
- * boundary so raw Apple responses never flow into the domain.
- */
 export const AppleLookupItemSchema = z.object({
   trackId: z.number(),
   trackName: z.string(),

@@ -1,11 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import type { AuditRecord } from "@aso/schemas";
 
-/**
- * Storage abstraction for audit records. The in-memory implementation is
- * sufficient for a single-node deployment (no queues per the brief); the
- * interface leaves room to swap in Redis/Postgres for multi-node or history.
- */
 export interface IAuditStore {
   create(record: AuditRecord): void;
   get(auditId: string): AuditRecord | undefined;

@@ -15,10 +15,6 @@ export declare const ImpactLevelSchema: z.ZodEnum<{
     medium: "medium";
     high: "high";
 }>;
-/**
- * Every recommendation is evidence-driven and actionable. For text-based
- * suggestions the model must supply concrete `before`/`after` copy.
- */
 export declare const RecommendationSchema: z.ZodObject<{
     category: z.ZodEnum<{
         quick_win: "quick_win";
@@ -42,7 +38,6 @@ export declare const RecommendationSchema: z.ZodObject<{
     after: z.ZodOptional<z.ZodString>;
 }, z.core.$strip>;
 export type Recommendation = z.infer<typeof RecommendationSchema>;
-/** The full set of recommendations produced by the recommendation tool. */
 export declare const RecommendationSetSchema: z.ZodObject<{
     quickWins: z.ZodArray<z.ZodObject<{
         category: z.ZodEnum<{

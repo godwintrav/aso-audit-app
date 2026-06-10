@@ -1,4 +1,3 @@
-/** Thrown when a string is not a recognizable Apple App Store app URL. */
 export class InvalidAppStoreUrlError extends Error {
   constructor(public readonly input: string) {
     super(
@@ -16,13 +15,8 @@ export interface ParsedAppStoreUrl {
 }
 
 const APP_ID_RE = /\/id(\d+)/i;
-// Country is the first path segment for apps.apple.com URLs, e.g. /us/app/...
 const COUNTRY_RE = /apps\.apple\.com\/([a-z]{2})\//i;
 
-/**
- * Extracts the numeric app id and storefront country code from an App Store
- * URL. Tolerant of locale prefixes, query strings and trailing fragments.
- */
 export function parseAppStoreUrl(input: string): ParsedAppStoreUrl {
   const trimmed = input.trim();
 
@@ -49,7 +43,6 @@ export function parseAppStoreUrl(input: string): ParsedAppStoreUrl {
   return {
     appId,
     country,
-    // Canonical, locale-stable URL we can hand to Firecrawl.
     url: `https://apps.apple.com/${country}/app/id${appId}`,
   };
 }

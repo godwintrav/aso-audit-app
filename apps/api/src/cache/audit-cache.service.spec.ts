@@ -73,7 +73,7 @@ describe("AuditCacheService", () => {
     const { store, service } = makeService();
     store.set("preview:123:us", { garbage: true }, 60_000);
     expect(service.getPreview(URL_A)).toBeUndefined();
-    expect(store.get("preview:123:us")).toBeUndefined(); // purged
+    expect(store.get("preview:123:us")).toBeUndefined();
   });
 
   it("bypasses entirely when caching is disabled", async () => {
@@ -81,7 +81,7 @@ describe("AuditCacheService", () => {
     const factory = vi.fn(async () => preview());
     await service.getOrCompute("preview", URL_A, AuditPreviewSchema, factory);
     await service.getOrCompute("preview", URL_A, AuditPreviewSchema, factory);
-    expect(factory).toHaveBeenCalledTimes(2); // no caching
+    expect(factory).toHaveBeenCalledTimes(2);
   });
 
   it("invalidate clears all namespaces for an app", () => {

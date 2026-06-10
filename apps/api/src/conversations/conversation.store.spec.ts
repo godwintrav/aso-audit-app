@@ -39,7 +39,7 @@ describe("InMemoryConversationStore", () => {
     store.upsert(convo({ id: "c", sessionId: "s2" }));
 
     const s1 = store.list("s1");
-    expect(s1.map((c) => c.id)).toEqual(["b", "a"]); // newest first
+    expect(s1.map((c) => c.id)).toEqual(["b", "a"]);
     expect(store.list("s2").map((c) => c.id)).toEqual(["c"]);
   });
 
@@ -48,7 +48,7 @@ describe("InMemoryConversationStore", () => {
     store.upsert(convo({ id: "a", createdAt: "2024-01-01T00:00:00.000Z" }));
     store.upsert(convo({ id: "b", createdAt: "2024-02-01T00:00:00.000Z" }));
     store.upsert(convo({ id: "c", createdAt: "2024-03-01T00:00:00.000Z" }));
-    expect(store.list("s1").map((c) => c.id)).toEqual(["c", "b"]); // "a" evicted
+    expect(store.list("s1").map((c) => c.id)).toEqual(["c", "b"]);
   });
 });
 

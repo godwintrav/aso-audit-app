@@ -84,7 +84,6 @@ describe("AuditService caching", () => {
     const second = service.startRun(URL);
     const secondRecord = await waitForDone(store, second.auditId);
 
-    // No additional acquisition or LLM calls on the cache hit.
     expect((appStore.getListing as ReturnType<typeof vi.fn>).mock.calls.length).toBe(acquireCalls);
     expect((gateway.generateStructured as ReturnType<typeof vi.fn>).mock.calls.length).toBe(llmCalls);
     expect(secondRecord.status).toBe("completed");
@@ -95,7 +94,6 @@ describe("AuditService caching", () => {
     const { service, store, conversations } = setup();
 
     const run = service.startRun(URL, false, "session-A");
-    // The history entry exists immediately (running), before the audit finishes.
     expect(conversations.list("session-A")).toHaveLength(1);
     expect(conversations.list("session-B")).toHaveLength(0);
 

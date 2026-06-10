@@ -7,10 +7,7 @@ export interface ScrapeResult {
   markdown: string;
 }
 
-/**
- * Wraps the Firecrawl SDK so the rest of the app depends on a tiny, typed
- * surface (`scrapeMarkdown`) rather than the SDK's shape directly.
- */
+
 @Injectable()
 export class FirecrawlClient {
   private readonly logger = new Logger(FirecrawlClient.name);
@@ -20,7 +17,6 @@ export class FirecrawlClient {
     this.client = new Firecrawl({ apiKey: config.firecrawlApiKey });
   }
 
-  /** Scrapes a URL and returns its markdown. Throws on failure (callers degrade). */
   async scrapeMarkdown(url: string): Promise<ScrapeResult> {
     const doc = (await this.client.scrape(url, {
       formats: ["markdown"],

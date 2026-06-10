@@ -1,6 +1,5 @@
 import type { AnalysisResults } from "./types";
 
-/** Condenses the analysis results into a compact brief for the recommendation prompt. */
 export function summarizeAnalyses(results: AnalysisResults): string {
   const lines: string[] = [];
 

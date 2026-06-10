@@ -1,5 +1,4 @@
 import { z } from "zod";
-/** Returned by POST /audit/preview — the data for the confirmation card. */
 export declare const AuditPreviewSchema: z.ZodObject<{
     appId: z.ZodString;
     country: z.ZodString;
@@ -10,7 +9,7 @@ export declare const AuditPreviewSchema: z.ZodObject<{
     iconUrl: z.ZodString;
 }, z.core.$strip>;
 export type AuditPreview = z.infer<typeof AuditPreviewSchema>;
-/** The canonical, ordered stages of an audit run (acquisition + workflow). */
+
 export declare const AuditStageSchema: z.ZodEnum<{
     acquire_metadata: "acquire_metadata";
     analyze_metadata: "analyze_metadata";
@@ -29,7 +28,6 @@ export declare const AuditStatusSchema: z.ZodEnum<{
     failed: "failed";
 }>;
 export type AuditStatus = z.infer<typeof AuditStatusSchema>;
-/** A single progress event streamed over SSE. */
 export declare const AuditProgressEventSchema: z.ZodObject<{
     auditId: z.ZodString;
     stage: z.ZodEnum<{
@@ -52,7 +50,6 @@ export declare const AuditProgressEventSchema: z.ZodObject<{
     at: z.ZodString;
 }, z.core.$strip>;
 export type AuditProgressEvent = z.infer<typeof AuditProgressEventSchema>;
-/** The full state of an audit, held in the AuditStore and exposed via GET /audit/:id. */
 export declare const AuditRecordSchema: z.ZodObject<{
     auditId: z.ZodString;
     status: z.ZodEnum<{

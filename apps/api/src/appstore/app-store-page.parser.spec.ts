@@ -3,7 +3,6 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { AppStorePageParser } from "./app-store-page.parser";
 
-// The fixture is the real Firecrawl response captured from the DigitPay page.
 const fixture = JSON.parse(
   readFileSync(
     resolve(process.cwd(), "firecrawl-response-json-example.json"),
@@ -30,7 +29,7 @@ describe("AppStorePageParser (real Firecrawl fixture)", () => {
 
   it("extracts competitor candidates with app ids", () => {
     const ids = parsed.competitorCandidates.map((c) => c.appId);
-    expect(ids).toContain("6708225786"); // Blockroll
+    expect(ids).toContain("6708225786");
     expect(parsed.competitorCandidates.length).toBeGreaterThanOrEqual(5);
     const blockroll = parsed.competitorCandidates.find((c) => c.appId === "6708225786");
     expect(blockroll?.title).toBe("Blockroll");

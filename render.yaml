@@ -1,0 +1,36 @@
+services:
+  - type: web
+    name: aso-audit-api
+    runtime: node
+    plan: free
+    rootDir: .
+    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm --filter "./packages/*" build && pnpm --filter @aso/api build
+    startCommand: pnpm --filter @aso/api start
+    numInstances: 1
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: FIRECRAWL_API_KEY
+        sync: false
+
+      - key: WEB_ORIGIN
+        sync: false
+      - key: HISTORY_PERSISTENCE
+        value: file
+
+  - type: web
+    name: aso-audit-web
+    runtime: node
+    plan: free
+    rootDir: .
+    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm --filter @aso/web build
+    startCommand: pnpm --filter @aso/web start
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+
+      - key: NEXT_PUBLIC_API_URL
+        sync: false

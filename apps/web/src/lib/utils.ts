@@ -1,12 +1,10 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
-/** Conditional className helper (shadcn convention). */
 export function cn(...inputs: ClassValue[]): string {
   return twMerge(clsx(inputs));
 }
 
-/** Maps a 0–100 score to a tailwind text color. */
 export function scoreColor(score: number): string {
   if (score >= 80) return "text-emerald-400";
   if (score >= 60) return "text-lime-400";
@@ -14,7 +12,6 @@ export function scoreColor(score: number): string {
   return "text-rose-400";
 }
 
-/** Maps a 0–100 score to a tailwind bar background color. */
 export function scoreBarColor(score: number): string {
   if (score >= 80) return "bg-emerald-500";
   if (score >= 60) return "bg-lime-500";
@@ -22,7 +19,6 @@ export function scoreBarColor(score: number): string {
   return "bg-rose-500";
 }
 
-/** Compact relative time, e.g. "just now", "5m ago", "3d ago". */
 export function timeAgo(iso: string): string {
   const then = new Date(iso).getTime();
   if (Number.isNaN(then)) return "";

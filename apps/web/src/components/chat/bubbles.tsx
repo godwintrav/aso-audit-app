@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-/** The user's message — right-aligned, compact (the App Store URL they pasted). */
 export function UserBubble({ text }: { text: string }) {
   return (
     <div className="flex justify-end">
@@ -12,10 +11,6 @@ export function UserBubble({ text }: { text: string }) {
   );
 }
 
-/**
- * An assistant message — left-aligned. Plain text gets a chat bubble; rich
- * content (cards, the report) is rendered full-width so it stays readable.
- */
 export function AssistantBubble({
   children,
   tone = "default",

@@ -3,7 +3,6 @@ import type { DimensionKey } from "@aso/schemas";
 export interface DimensionDefinition {
   key: DimensionKey;
   label: string;
-  /** Weight exactly as specified in the assignment brief. */
   weight: number;
   description: string;
 }
@@ -77,7 +76,6 @@ export const DIMENSION_BY_KEY: Record<DimensionKey, DimensionDefinition> =
     DIMENSION_DEFINITIONS.map((d) => [d.key, d]),
   ) as Record<DimensionKey, DimensionDefinition>;
 
-/** Sum of the raw weights as written in the brief (110). */
 export const TOTAL_RAW_WEIGHT = DIMENSION_DEFINITIONS.reduce(
   (sum, d) => sum + d.weight,
   0,

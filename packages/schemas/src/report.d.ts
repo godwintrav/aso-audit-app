@@ -1,5 +1,4 @@
 import { z } from "zod";
-/** Lightweight summary of the audited app, embedded in the report. */
 export declare const AppSummarySchema: z.ZodObject<{
     appId: z.ZodString;
     title: z.ZodString;
@@ -11,7 +10,6 @@ export declare const AppSummarySchema: z.ZodObject<{
     ratingCount: z.ZodNumber;
 }, z.core.$strip>;
 export type AppSummary = z.infer<typeof AppSummarySchema>;
-/** One row of the competitor comparison table. */
 export declare const CompetitorComparisonRowSchema: z.ZodObject<{
     competitor: z.ZodObject<{
         appId: z.ZodString;
@@ -36,7 +34,6 @@ export declare const CompetitorComparisonRowSchema: z.ZodObject<{
     }>;
 }, z.core.$strip>;
 export type CompetitorComparisonRow = z.infer<typeof CompetitorComparisonRowSchema>;
-/** The final, fully-assembled audit report returned to the frontend. */
 export declare const AuditReportSchema: z.ZodObject<{
     appId: z.ZodString;
     app: z.ZodObject<{

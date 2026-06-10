@@ -77,8 +77,6 @@ function scoreSubtitle(listing: AppListing, results: AnalysisResults): Dimension
 }
 
 function scoreKeywordField(results: AnalysisResults): DimensionResult {
-  // The keyword field is never public; infer quality from title + subtitle
-  // keyword strength as a proxy.
   const signals = [results.title?.score, results.subtitle?.score].filter(
     (s): s is number => typeof s === "number",
   );
@@ -112,7 +110,6 @@ function scoreScreenshots(listing: AppListing, results: AnalysisResults): Dimens
 }
 
 function scoreRatings(listing: AppListing, results: AnalysisResults): DimensionResult {
-  // Blend the qualitative review analysis with quantitative rating signals.
   const ratingScore = (listing.rating / 5) * 100;
   const volumeBonus = Math.min(20, Math.log10(listing.ratingCount + 1) * 10);
   const quantitative = clampScore(ratingScore * 0.8 + volumeBonus);
@@ -130,7 +127,6 @@ function scoreRatings(listing: AppListing, results: AnalysisResults): DimensionR
 }
 
 function scoreConversion(listing: AppListing, results: AnalysisResults): DimensionResult {
-  // Conversion readiness blends screenshots, ratings and description quality.
   const parts = [
     results.screenshots?.score,
     results.description?.score,

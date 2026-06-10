@@ -48,7 +48,6 @@ describe("runAudit (integration, stubbed LLM)", () => {
 
     expect(() => AuditReportSchema.parse(report)).not.toThrow();
     expect(report.screenshotAnalysis).toBeNull();
-    // The report still scores all dimensions despite the failures.
     expect(report.dimensions).toHaveLength(10);
   });
 });

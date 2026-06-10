@@ -1,11 +1,5 @@
 import type { AnalysisGateway, AnalysisKind, GenerateStructuredInput } from "./gateway";
 
-/**
- * Deterministic, offline gateway for tests and demos. It returns canned,
- * schema-valid payloads per analysis kind and validates them against the
- * caller's schema, so a drift between the canned data and the schema fails
- * loudly rather than silently. No network, no API key, fully reproducible.
- */
 const CANNED: Record<AnalysisKind, unknown> = {
   title: {
     score: 72,
@@ -86,9 +80,7 @@ const CANNED: Record<AnalysisKind, unknown> = {
 };
 
 export interface StubGatewayOptions {
-  /** Override canned payloads per kind. */
   overrides?: Partial<Record<AnalysisKind, unknown>>;
-  /** If set, this kind throws to exercise degradation paths. */
   failOn?: AnalysisKind[];
 }
 
@@ -100,7 +92,6 @@ export function createStubGateway(options: StubGatewayOptions = {}): AnalysisGat
         throw new Error(`Stub gateway: forced failure for kind "${input.kind}"`);
       }
       const payload = options.overrides?.[input.kind] ?? CANNED[input.kind];
-      // Validate against the caller's schema so canned data can't drift silently.
       return input.schema.parse(payload);
     },
   };

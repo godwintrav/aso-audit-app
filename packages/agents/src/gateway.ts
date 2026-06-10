@@ -14,7 +14,6 @@ export interface GenerateStructuredInput<T> {
   system: string;
   prompt: string;
   schema: z.ZodType<T>;
-  /** Image URLs to attach for vision models (screenshot analysis). */
   images?: string[];
 }
 

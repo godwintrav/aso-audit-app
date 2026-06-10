@@ -23,7 +23,6 @@ export function ChatPanel(props: ChatPanelProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const isEmpty = !activeConversation && !loadingConversation && audit.phase === "idle";
 
-  // Follow live progress to the bottom; jump to the top when opening a past audit.
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
@@ -32,8 +31,6 @@ export function ChatPanel(props: ChatPanelProps) {
   }, [activeConversation, audit.phase, audit.events.length]);
 
   return (
-    // The scroll lives on the full-width column so the scrollbar sits flush with
-    // the window edge — content stays centered with symmetric margins.
     <section ref={scrollRef} className="h-full flex-1 overflow-y-auto">
       <div
         className={`mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 ${
@@ -52,7 +49,6 @@ export function ChatPanel(props: ChatPanelProps) {
   );
 }
 
-/** A past audit, re-rendered from the persisted conversation (no re-run). */
 function HistoryThread({ conversation }: { conversation: Conversation }) {
   return (
     <>
@@ -72,7 +68,6 @@ function HistoryThread({ conversation }: { conversation: Conversation }) {
   );
 }
 
-/** The live new-audit flow: composer → confirmation → progress → report. */
 function LiveThread({ audit, onSubmitUrl, onConfirm, onCancel }: ChatPanelProps) {
   if (audit.phase === "idle") {
     return (
