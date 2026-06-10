@@ -31,7 +31,7 @@ export function scoreDimensions(
 
     appPreviewVideo: listing.hasAppPreviewVideo
       ? { score: 80, summary: "App preview video is present." }
-      : { score: 30, summary: "No app preview video — a missed conversion lever." },
+      : { score: 30, summary: "No app preview video: a missed conversion lever." },
 
     ratingsAndReviews: scoreRatings(listing, results),
 
@@ -71,7 +71,7 @@ function scoreSubtitle(listing: AppListing, results: AnalysisResults): Dimension
     };
   }
   if (!listing.subtitle) {
-    return { score: 20, summary: "No subtitle is set — a high-value keyword field is unused." };
+    return { score: 20, summary: "No subtitle is set; a high-value keyword field is unused." };
   }
   return { score: 40, summary: "Subtitle present but could not be analyzed." };
 }

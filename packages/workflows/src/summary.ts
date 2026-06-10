@@ -18,17 +18,17 @@ export function summarizeAnalyses(results: AnalysisResults): string {
   }
   if (results.screenshots) {
     lines.push(
-      `Screenshots (${results.screenshots.score}/100): weaknesses — ${results.screenshots.weaknesses.join("; ") || "none"}`,
+      `Screenshots (${results.screenshots.score}/100): weaknesses: ${results.screenshots.weaknesses.join("; ") || "none"}`,
     );
   }
   if (results.reviews) {
     lines.push(
-      `Reviews (${results.reviews.score}/100): ${results.reviews.sentiment}; complaints — ${results.reviews.complaintThemes.join("; ") || "none"}`,
+      `Reviews (${results.reviews.score}/100): ${results.reviews.sentiment}; complaints: ${results.reviews.complaintThemes.join("; ") || "none"}`,
     );
   }
   if (results.competitors) {
     lines.push(
-      `Competitors (${results.competitors.score}/100): opportunities — ${results.competitors.opportunities.join("; ") || "none"}`,
+      `Competitors (${results.competitors.score}/100): opportunities: ${results.competitors.opportunities.join("; ") || "none"}`,
     );
   }
 

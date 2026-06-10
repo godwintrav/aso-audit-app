@@ -22,7 +22,7 @@ export function ReportView({ report }: { report: AuditReport }) {
 
       <RecommendationSection
         title="Quick wins"
-        description="Low effort, high impact — ship these first."
+        description="Low effort, high impact ship these first."
         items={report.quickWins}
       />
       <RecommendationSection

@@ -93,7 +93,7 @@ export function buildCompetitorPrompt(input: {
   const competitorText = input.competitors
     .map(
       (c) =>
-        `- ${c.title} (${c.category ?? "?"}) — rating ${c.rating ?? "?"} from ${
+        `- ${c.title} (${c.category ?? "?"}), rating ${c.rating ?? "?"} from ${
           c.ratingCount ?? "?"
         } ratings`,
     )
@@ -106,8 +106,8 @@ export function buildCompetitorPrompt(input: {
     ),
     user:
       `Subject app: "${input.app.title}"${
-        input.app.subtitle ? ` — "${input.app.subtitle}"` : ""
-      } (${input.app.category}) — rating ${input.app.rating} from ${
+        input.app.subtitle ? `: "${input.app.subtitle}"` : ""
+      } (${input.app.category}), rating ${input.app.rating} from ${
         input.app.ratingCount
       } ratings.\n\nCompetitors:\n${competitorText || "(none found)"}`,
   };
@@ -119,7 +119,7 @@ export function buildRecommendationsPrompt(input: {
   analysisSummary: string;
 }): Prompt {
   const dimText = input.dimensions
-    .map((d) => `- ${d.label}: ${d.score}/100 — ${d.summary}`)
+    .map((d) => `- ${d.label}: ${d.score}/100, ${d.summary}`)
     .join("\n");
   return {
     system: system(
@@ -133,7 +133,7 @@ export function buildRecommendationsPrompt(input: {
         `advice.`,
     ),
     user: `App: "${input.listing.title}"${
-      input.listing.subtitle ? ` — "${input.listing.subtitle}"` : ""
+      input.listing.subtitle ? `: "${input.listing.subtitle}"` : ""
     } (${input.listing.category})
 Title: "${input.listing.title}"
 Subtitle: "${input.listing.subtitle ?? "(none set)"}"

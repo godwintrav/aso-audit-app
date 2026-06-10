@@ -31,7 +31,7 @@ export function CompetitorTable({ rows }: { rows: CompetitorComparisonRow[] }) {
                     {row.competitor.title}
                   </td>
                   <td className="py-3 pr-4 text-slate-400">
-                    {row.competitor.rating ? `${row.competitor.rating}★` : "—"}
+                    {row.competitor.rating ? `${row.competitor.rating}★` : "N/A"}
                   </td>
                   <td className="py-3 pr-4">
                     <Badge tone={qualityTone(row.metadataQuality)}>{row.metadataQuality}</Badge>

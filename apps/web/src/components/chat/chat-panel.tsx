@@ -110,7 +110,7 @@ function LiveThread({ audit, onSubmitUrl, onConfirm, onCancel }: ChatPanelProps)
           <div className="space-y-3">
             <ProgressList events={audit.events} />
             <p className="text-xs text-slate-500">
-              Running the audit — this usually takes 20–40 seconds.
+              Running the audit; this usually takes 20-40 seconds.
             </p>
           </div>
         </AssistantBubble>

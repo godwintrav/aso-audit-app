@@ -54,7 +54,7 @@ function Findings({ title, items, tone }: { title: string; items: string[]; tone
       <h4 className={cn("mb-2 text-xs font-semibold uppercase", tone)}>{title}</h4>
       <ul className="space-y-1 text-sm text-slate-400">
         {items.length === 0 ? (
-          <li className="text-slate-600">—</li>
+          <li className="text-slate-600">None</li>
         ) : (
           items.map((item, i) => <li key={i}>• {item}</li>)
         )}
