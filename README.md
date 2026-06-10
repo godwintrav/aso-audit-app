@@ -124,43 +124,63 @@ pnpm test         # Vitest: 66 tests; the LLM is stubbed and the parser
 
 ## Key decisions & tradeoffs
 
-- **Zod as the single source of truth.** Domain types are inferred from Zod schemas, and
-  every boundary is validated at runtime: Apple/Firecrawl responses, LLM output, request
-  DTOs, and even values read back out of the cache. Nothing untyped enters the system.
-- **The LLM is an unreliable, swappable dependency.** All model calls go through one
-  `AnalysisGateway` seam: a real OpenAI implementation in production and a deterministic
-  stub in tests (so the full workflow runs offline, no key or network). Structured output
-  is schema-constrained via the AI SDK, and the gateway retries responses that fail schema
-  validation (common on data-sparse apps).
-- **Specialized tools + a Mastra workflow, not one mega-prompt.** Independent analyses
-  (title, subtitle, description, screenshots, reviews, competitors) run **in parallel**,
-  then scoring → recommendations → assembly run in sequence. A failed stage or missing
-  source data **degrades gracefully** (the dimension is scored conservatively with a
-  warning) rather than aborting the audit.
-- **Right data source per field.** Metadata/screenshots/ratings come from the free iTunes
-  **Lookup** API (the brief's "Apple Search API"); subtitle and the keyword field aren't
-  public, so subtitle is parsed from the Firecrawl markdown and the keyword field is scored
-  heuristically. If Firecrawl is unavailable the audit still completes on Apple-only data.
-- **Scoring normalized to /100.** The brief's ten dimension weights sum to 110; we keep the
-  listed weights as the source of truth and normalize against their real total, documented
-  in `packages/core/src/constants/scoring.ts`.
-- **Simplicity over premature infra.** State (audit records, cache) lives in in-memory
-  stores behind interfaces (`IAuditStore`, `ICacheStore`), no queues, Redis, or workers,
-  so a single node is enough today and a distributed backend can be dropped in later with
-  zero call-site changes.
-- **Caching to save tokens.** Reports/listings/previews are cached by `appId:country` with
-  TTL + LRU and single-flight de-duplication, so re-auditing the same app is instant and
-  spends nothing. Rate limiting uses the official `@nestjs/throttler` (kept deliberately
-  simple).
-- **Chat history = persisted, session-scoped conversations.** Each audit is saved as one
-  "conversation" (id = auditId) behind a swappable `IConversationStore` (default: a JSON
-  file with atomic write-through, validated on load, survives restarts; `memory` mode and a
-  future DB are drop-in). History is scoped by an anonymous `X-Session-Id` (no auth), which
-  maps cleanly to real accounts later; the chat "messages" are derived on the client from
-  the conversation's `{ url, preview, report }`, so there's nothing extra to store.
-- **Package boundaries are deliberate.** Splitting `schemas`/`core` out keeps the web
-  bundle free of server/LLM dependencies (it imports only pure types + utils) and enforces
-  the layering: a package can only import what it declares.
+Each bullet is **what I chose → why → the tradeoff**.
+
+- **Two apps — a Next.js frontend and a NestJS backend — not a frontend-only app.** A
+  server is required because: API keys (OpenAI, Firecrawl) must never reach the browser;
+  protections like caching and rate-limiting can only be *enforced* server-side; and an
+  audit is a long-running, multi-step job that needs a real, persistent process. The
+  frontend stays a thin layer that just renders results.
+
+- **A monorepo with small shared packages.** Domain types and pure logic live in `@aso/*`
+  packages used by both apps, so the API and UI can't drift out of sync. The web app
+  imports only types and pure helpers, which keeps the browser bundle free of any
+  server/AI code.
+
+- **Validate everything with Zod.** TypeScript types are generated *from* Zod schemas, and
+  every input from the outside world is validated at runtime Apple, Firecrawl, the LLM,
+  HTTP request bodies, even data read back out of the cache. If it doesn't match the
+  schema, it doesn't enter the system.
+
+- **Treat the AI as an unreliable, replaceable part.** Every model call goes through one
+  interface (`AnalysisGateway`): production uses OpenAI, tests use a fake that returns fixed
+  data so the whole flow runs with no API key or network. The model is forced to return
+  JSON matching a schema, and we retry when it doesn't (common for apps with sparse data).
+
+- **Many small analysis steps, run as a workflow — not one giant prompt.** Each part of the
+  listing (title, subtitle, description, screenshots, reviews, competitors) is its own step.
+  Independent steps run **in parallel** for speed, then scoring → recommendations → report
+  run in order. If a step fails or data is missing, that dimension is scored conservatively
+  with a warning — **the audit never crashes**.
+
+- **Stream progress with SSE, not WebSockets.** Progress flows one way (server → browser),
+  so the simpler tool wins: SSE is plain HTTP with built-in auto-reconnect and no special
+  handshake, and the browser has native support (`EventSource`). Tradeoff: it's one-way and
+  can't send custom headers which is fine here, since the client only *reads* progress. We'd switch
+  to WebSockets only if the UI needed two-way interaction (e.g. cancelling a run).
+
+- **Use the right data source for each field.** App metadata, screenshots, and ratings come
+  from Apple's free iTunes Lookup API; reviews, subtitle, and competitors are scraped from
+  the store page with Firecrawl (Apple doesn't expose those). If Firecrawl is down, the
+  audit still finishes using Apple-only data.
+
+- **Scores are out of 100.** The brief's ten dimension weights actually add up to 110, so we
+  keep the given weights but normalize against their real total — the final score stays on a
+  clean 0–100 scale. (Documented in `packages/core/src/constants/scoring.ts`.)
+
+- **Keep the infrastructure simple, but swappable.** Audit state, the cache, and history use
+  in-memory maps and a JSON file behind interfaces (`IAuditStore`, `ICacheStore`,
+  `IConversationStore`) — no database, queue, or Redis. One server is enough today, and each
+  piece can later be replaced with a real datastore without touching the code that uses it.
+
+- **Cache results to save money.** A finished audit is cached per app (`appId:country`), so
+  re-running the same app is instant and spends no tokens; identical in-flight requests share
+  one run. A simple per-IP rate limit protects the expensive endpoints.
+
+- **Saved, per-browser history (the "chat" sidebar).** Each audit is stored as a conversation
+  and listed in the sidebar. History is tied to an anonymous browser id (no login) and
+  persisted to a JSON file so it survives restarts. The chat bubbles are rebuilt from the
+  saved `{ url, preview, report }`, so there's nothing extra to store.
 
 ## Notes
 
