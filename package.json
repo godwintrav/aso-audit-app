@@ -14,7 +14,9 @@
     "dev:web": "pnpm --filter @aso/web dev",
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck",
-    "test": "vitest run",
+    "test": "vitest run && pnpm --filter @aso/web test",
+    "test:api": "vitest run",
+    "test:web": "pnpm --filter @aso/web test",
     "test:watch": "vitest",
     "lint": "pnpm -r lint"
   },

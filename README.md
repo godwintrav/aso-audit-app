@@ -95,9 +95,17 @@ Open http://localhost:3000 and paste an App Store URL, e.g.
 pnpm dev          # build packages, then run api + web in parallel
 pnpm build        # build every workspace package + app
 pnpm typecheck    # strict tsc across all packages/apps
-pnpm test         # Vitest: 66 tests; the LLM is stubbed and the parser
-                  # runs against a real captured Firecrawl fixture (no network/keys needed)
+pnpm test         # run ALL tests (215): api + packages, then the web UI suite
+pnpm test:api     # only the api + packages tests (Node env, 141 tests)
+pnpm test:web     # only the web component + hook tests (jsdom, 74 tests)
+pnpm test:watch   # api + packages tests in watch mode
 ```
+
+The LLM is stubbed and the parser runs against a real captured Firecrawl fixture, so the
+suite needs no network or API keys. The api/package tests run under Vitest's `node`
+environment; the web tests (`apps/web`) run under `jsdom` with Testing Library via the
+app's own `apps/web/vitest.config.mts`. `pnpm test` runs them in sequence it stops at the
+first failing phase, so use `test:api` / `test:web` to target one suite.
 
 ## API
 
