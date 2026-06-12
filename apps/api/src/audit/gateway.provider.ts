@@ -13,5 +13,6 @@ export const analysisGatewayProvider: Provider = {
       apiKey: config.openaiApiKey,
       textModel: config.textModel,
       visionModel: config.visionModel,
+      timeoutMs: config.llmTimeoutMs,
     }),
 };

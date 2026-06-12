@@ -1,5 +1,5 @@
 import { createWorkflow } from "@mastra/core/workflows";
-import { z } from "zod";
+import { AppListingSchema, AuditReportSchema } from "@aso/schemas";
 import {
   analyzeCompetitorsStep,
   analyzeMetadataStep,
@@ -10,10 +10,11 @@ import {
   generateScoresStep,
 } from "./steps";
 
+
 export const asoAuditWorkflow = createWorkflow({
   id: "aso-audit",
-  inputSchema: z.object({}),
-  outputSchema: z.object({}),
+  inputSchema: AppListingSchema,
+  outputSchema: AuditReportSchema,
 })
   .parallel([
     analyzeMetadataStep,

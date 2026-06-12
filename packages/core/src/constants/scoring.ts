@@ -80,3 +80,21 @@ export const TOTAL_RAW_WEIGHT = DIMENSION_DEFINITIONS.reduce(
   (sum, d) => sum + d.weight,
   0,
 );
+
+export const SCORING_HEURISTICS = {
+  unanalyzedTextScore: 30,
+  missingSubtitleScore: 20,
+  unanalyzedSubtitleScore: 40,
+  keywordFieldProxyMultiplier: 0.85,
+  keywordFieldUnknownScore: 35,
+  unanalyzedScreenshotsScore: 45,
+  appPreviewVideoPresentScore: 80,
+  appPreviewVideoAbsentScore: 30,
+  iconPresentScore: 70,
+  ratingQualityWeight: 0.8,
+  ratingVolumeBonusCap: 20,
+  ratingVolumeLogMultiplier: 10,
+  competitiveBaselineScore: 50,
+  competitivePointsPerStar: 20,
+  competitiveNoDataScore: 40,
+} as const;

@@ -88,6 +88,9 @@ Open http://localhost:3000 and paste an App Store URL, e.g.
 | `HISTORY_PERSISTENCE` | | `file` | `file` (survives restarts) or `memory` |
 | `CONVERSATIONS_FILE` | | `./data/conversations.json` | Where history is stored (file mode) |
 | `CONVERSATIONS_MAX_PER_SESSION` | | `50` | Max past audits kept per session (oldest evicted) |
+| `HTTP_TIMEOUT_MS` | | `20000` | Per-call timeout for iTunes Lookup |
+| `FIRECRAWL_TIMEOUT_MS` | | `60000` | Per-call timeout for the Firecrawl scrape |
+| `LLM_TIMEOUT_MS` | | `60000` | Per-call timeout for OpenAI (text + vision) |
 
 ## Scripts
 
@@ -176,10 +179,15 @@ Each bullet is **what I chose → why → the tradeoff**.
   keep the given weights but normalize against their real total — the final score stays on a
   clean 0–100 scale. (Documented in `packages/core/src/constants/scoring.ts`.)
 
-- **Keep the infrastructure simple, but swappable.** Audit state, the cache, and history use
-  in-memory maps and a JSON file behind interfaces (`IAuditStore`, `ICacheStore`,
-  `IConversationStore`) — no database, queue, or Redis. One server is enough today, and each
-  piece can later be replaced with a real datastore without touching the code that uses it.
+- **Keep the infrastructure simple, but swappable.** This is a **small demo / take-home
+  project**, so audit state and the cache live in **in-memory maps**, and conversation history
+  persists to a **JSON file** all behind interfaces (`IAuditStore`, `ICacheStore`,
+  `IConversationStore`), with no database, queue, or Redis. For a project this size that means
+  it runs from a single `pnpm dev` with zero infra to stand up, and it's fine that in-memory
+  state resets on restart (the JSON file keeps history across a live restart). A JSON file was
+  chosen over a DB precisely because the data volume and concurrency are tiny here; in
+  production you'd swap each interface for a real datastore (Redis/Postgres) **without touching
+  any calling code**.
 
 - **Cache results to save money.** A finished audit is cached per app (`appId:country`), so
   re-running the same app is instant and spends no tokens; identical in-flight requests share

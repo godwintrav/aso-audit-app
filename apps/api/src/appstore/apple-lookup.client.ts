@@ -1,4 +1,6 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { Inject, Injectable, Logger } from "@nestjs/common";
+import { APP_CONFIG } from "../config/config.module";
+import type { AppConfig } from "../config/configuration";
 import {
   type AppleLookupItem,
   AppleLookupItemSchema,
@@ -17,6 +19,8 @@ export class AppNotFoundError extends Error {
 @Injectable()
 export class AppleLookupClient {
   private readonly logger = new Logger(AppleLookupClient.name);
+
+  constructor(@Inject(APP_CONFIG) private readonly config: AppConfig) {}
 
   async lookup(appId: string, country = "us"): Promise<AppleLookupItem> {
     const items = await this.lookupMany([appId], country);
@@ -56,7 +60,18 @@ export class AppleLookupClient {
   }
 
   private async getJson(url: string): Promise<unknown> {
-    const res = await fetch(url, { headers: { Accept: "application/json" } });
+    let res: Response;
+    try {
+      res = await fetch(url, {
+        headers: { Accept: "application/json" },
+        signal: AbortSignal.timeout(this.config.httpTimeoutMs),
+      });
+    } catch (error) {
+      if (error instanceof Error && error.name === "TimeoutError") {
+        throw new Error(`iTunes API timed out after ${this.config.httpTimeoutMs}ms`);
+      }
+      throw error;
+    }
     if (!res.ok) {
       throw new Error(`iTunes API request failed (${res.status}) for ${url}`);
     }

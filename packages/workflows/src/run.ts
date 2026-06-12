@@ -1,7 +1,8 @@
 import { RuntimeContext } from "@mastra/core/runtime-context";
 import type { AnalysisGateway } from "@aso/agents";
+import { ANALYSIS_GATEWAY_KEY } from "@aso/tools";
 import type { AppListing, AuditReport } from "@aso/schemas";
-import { AUDIT_CONTEXT_KEY, createRunContext, type ProgressEmitter } from "./context";
+import { PROGRESS_EMITTER_KEY, type ProgressEmitter } from "./context";
 import { asoAuditWorkflow } from "./workflow";
 
 export interface RunAuditInput {
@@ -10,17 +11,16 @@ export interface RunAuditInput {
   emit?: ProgressEmitter;
 }
 
-export async function runAudit(input: RunAuditInput): Promise<AuditReport> {
-  const ctx = createRunContext(input);
 
+export async function runAudit(input: RunAuditInput): Promise<AuditReport> {
   const runtimeContext = new RuntimeContext();
-  runtimeContext.set(AUDIT_CONTEXT_KEY, ctx);
+  runtimeContext.set(ANALYSIS_GATEWAY_KEY, input.gateway);
+  if (input.emit) runtimeContext.set(PROGRESS_EMITTER_KEY, input.emit);
 
   const run = await asoAuditWorkflow.createRunAsync();
-  await run.start({ inputData: {}, runtimeContext });
+  const result = await run.start({ inputData: input.listing, runtimeContext });
 
-  if (!ctx.report) {
-    throw new Error("Audit workflow completed without producing a report.");
-  }
-  return ctx.report;
+  if (result.status === "success") return result.result;
+  if (result.status === "failed") throw result.error;
+  throw new Error(`Audit workflow ended in unexpected state: ${result.status}`);
 }

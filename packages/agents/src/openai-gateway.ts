@@ -7,6 +7,7 @@ export interface OpenAIGatewayConfig {
   textModel?: string;
   visionModel?: string;
   maxRetries?: number;
+  timeoutMs?: number;
 }
 
 export class OpenAIAnalysisGateway implements AnalysisGateway {
@@ -14,12 +15,14 @@ export class OpenAIAnalysisGateway implements AnalysisGateway {
   private readonly textModel: string;
   private readonly visionModel: string;
   private readonly maxRetries: number;
+  private readonly timeoutMs?: number;
 
   constructor(config: OpenAIGatewayConfig) {
     this.openai = createOpenAI({ apiKey: config.apiKey });
     this.textModel = config.textModel ?? "gpt-4o";
     this.visionModel = config.visionModel ?? "gpt-4o";
     this.maxRetries = config.maxRetries ?? 3;
+    this.timeoutMs = config.timeoutMs;
   }
 
   async generateStructured<T>(input: GenerateStructuredInput<T>): Promise<T> {
@@ -47,6 +50,7 @@ export class OpenAIAnalysisGateway implements AnalysisGateway {
           system: input.system,
           messages,
           maxRetries: 1,
+          ...(this.timeoutMs ? { abortSignal: AbortSignal.timeout(this.timeoutMs) } : {}),
         });
         return object;
       } catch (error) {

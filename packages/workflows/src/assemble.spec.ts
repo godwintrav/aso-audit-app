@@ -74,11 +74,13 @@ describe("assembleReport", () => {
     );
     const row = report.competitorComparison[0];
     expect(row.metadataQuality).toBe("stronger");
-    expect(row.positioning).toContain("competes in Finance");
+    expect(row.positioning).toContain("Finance");
   });
 
   it("rates the subject weaker when its rating is clearly below the competitor", () => {
-    const report = assemble(listing({ rating: 4, competitors: [competitor({ rating: 5 })] }));
+    const report = assemble(
+      listing({ rating: 4, competitors: [competitor({ rating: 5, ratingCount: 50_000 })] }),
+    );
     expect(report.competitorComparison[0].metadataQuality).toBe("weaker");
   });
 

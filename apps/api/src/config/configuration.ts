@@ -26,6 +26,9 @@ const EnvSchema = z.object({
   HISTORY_PERSISTENCE: z.enum(["file", "memory"]).default("file"),
   CONVERSATIONS_FILE: z.string().default("./data/conversations.json"),
   CONVERSATIONS_MAX_PER_SESSION: z.coerce.number().int().positive().default(50),
+  HTTP_TIMEOUT_MS: z.coerce.number().int().positive().default(20_000),
+  FIRECRAWL_TIMEOUT_MS: z.coerce.number().int().positive().default(60_000),
+  LLM_TIMEOUT_MS: z.coerce.number().int().positive().default(60_000),
 });
 
 export type AppConfig = {
@@ -43,6 +46,9 @@ export type AppConfig = {
   historyPersistence: "file" | "memory";
   conversationsFile: string;
   conversationsMaxPerSession: number;
+  httpTimeoutMs: number;
+  firecrawlTimeoutMs: number;
+  llmTimeoutMs: number;
 };
 
 function loadDotEnv(): void {
@@ -85,5 +91,8 @@ export function loadConfig(): AppConfig {
     historyPersistence: env.HISTORY_PERSISTENCE,
     conversationsFile: resolve(process.cwd(), env.CONVERSATIONS_FILE),
     conversationsMaxPerSession: env.CONVERSATIONS_MAX_PER_SESSION,
+    httpTimeoutMs: env.HTTP_TIMEOUT_MS,
+    firecrawlTimeoutMs: env.FIRECRAWL_TIMEOUT_MS,
+    llmTimeoutMs: env.LLM_TIMEOUT_MS,
   };
 }

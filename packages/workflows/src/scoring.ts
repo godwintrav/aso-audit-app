@@ -1,4 +1,9 @@
-import { clampScore, DIMENSION_BY_KEY, weightedScore } from "@aso/core";
+import {
+  clampScore,
+  DIMENSION_BY_KEY,
+  SCORING_HEURISTICS as H,
+  weightedScore,
+} from "@aso/core";
 import type { AppListing, DimensionKey, DimensionScore } from "@aso/schemas";
 import type { AnalysisResults } from "./types";
 
@@ -14,7 +19,7 @@ export function scoreDimensions(
   const byKey: Record<DimensionKey, DimensionResult> = {
     title: results.title
       ? { score: results.title.score, summary: summarizeText(results.title.findings) }
-      : { score: 30, summary: "Title could not be analyzed." },
+      : { score: H.unanalyzedTextScore, summary: "Title could not be analyzed." },
 
     subtitle: scoreSubtitle(listing, results),
 
@@ -25,18 +30,21 @@ export function scoreDimensions(
           score: results.description.score,
           summary: summarizeText(results.description.findings),
         }
-      : { score: 30, summary: "Description could not be analyzed." },
+      : { score: H.unanalyzedTextScore, summary: "Description could not be analyzed." },
 
     screenshots: scoreScreenshots(listing, results),
 
     appPreviewVideo: listing.hasAppPreviewVideo
-      ? { score: 80, summary: "App preview video is present." }
-      : { score: 30, summary: "No app preview video: a missed conversion lever." },
+      ? { score: H.appPreviewVideoPresentScore, summary: "App preview video is present." }
+      : {
+          score: H.appPreviewVideoAbsentScore,
+          summary: "No app preview video: a missed conversion lever.",
+        },
 
     ratingsAndReviews: scoreRatings(listing, results),
 
     icon: listing.iconUrl
-      ? { score: 70, summary: "Icon is present; review clarity and category fit." }
+      ? { score: H.iconPresentScore, summary: "Icon is present; review clarity and category fit." }
       : { score: 0, summary: "No icon available." },
 
     conversionSignals: scoreConversion(listing, results),
@@ -71,9 +79,12 @@ function scoreSubtitle(listing: AppListing, results: AnalysisResults): Dimension
     };
   }
   if (!listing.subtitle) {
-    return { score: 20, summary: "No subtitle is set; a high-value keyword field is unused." };
+    return {
+      score: H.missingSubtitleScore,
+      summary: "No subtitle is set; a high-value keyword field is unused.",
+    };
   }
-  return { score: 40, summary: "Subtitle present but could not be analyzed." };
+  return { score: H.unanalyzedSubtitleScore, summary: "Subtitle present but could not be analyzed." };
 }
 
 function scoreKeywordField(results: AnalysisResults): DimensionResult {
@@ -81,11 +92,11 @@ function scoreKeywordField(results: AnalysisResults): DimensionResult {
     (s): s is number => typeof s === "number",
   );
   if (signals.length === 0) {
-    return { score: 35, summary: "Keyword targeting could not be inferred." };
+    return { score: H.keywordFieldUnknownScore, summary: "Keyword targeting could not be inferred." };
   }
   const avg = signals.reduce((a, b) => a + b, 0) / signals.length;
   return {
-    score: Math.round(avg * 0.85),
+    score: Math.round(avg * H.keywordFieldProxyMultiplier),
     summary: "Inferred from title and subtitle keyword strength (field is not public).",
   };
 }
@@ -104,15 +115,18 @@ function scoreScreenshots(listing: AppListing, results: AnalysisResults): Dimens
     return { score: 0, summary: "No screenshots available." };
   }
   return {
-    score: 45,
+    score: H.unanalyzedScreenshotsScore,
     summary: `${listing.screenshots.length} screenshots present but not analyzed.`,
   };
 }
 
 function scoreRatings(listing: AppListing, results: AnalysisResults): DimensionResult {
   const ratingScore = (listing.rating / 5) * 100;
-  const volumeBonus = Math.min(20, Math.log10(listing.ratingCount + 1) * 10);
-  const quantitative = clampScore(ratingScore * 0.8 + volumeBonus);
+  const volumeBonus = Math.min(
+    H.ratingVolumeBonusCap,
+    Math.log10(listing.ratingCount + 1) * H.ratingVolumeLogMultiplier,
+  );
+  const quantitative = clampScore(ratingScore * H.ratingQualityWeight + volumeBonus);
 
   if (results.reviews) {
     return {
@@ -151,11 +165,13 @@ function scoreCompetitive(listing: AppListing, results: AnalysisResults): Dimens
   }
   const rated = listing.competitors.filter((c) => typeof c.rating === "number");
   if (rated.length === 0) {
-    return { score: 40, summary: "No competitor data available to benchmark against." };
+    return { score: H.competitiveNoDataScore, summary: "No competitor data available to benchmark against." };
   }
   const competitorAvg =
     rated.reduce((sum, c) => sum + (c.rating ?? 0), 0) / rated.length;
-  const relative = clampScore(50 + (listing.rating - competitorAvg) * 20);
+  const relative = clampScore(
+    H.competitiveBaselineScore + (listing.rating - competitorAvg) * H.competitivePointsPerStar,
+  );
   return {
     score: relative,
     summary: `Rating ${listing.rating}★ vs competitor average ${competitorAvg.toFixed(1)}★.`,

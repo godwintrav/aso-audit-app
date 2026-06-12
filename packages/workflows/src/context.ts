@@ -1,12 +1,5 @@
-import type { AnalysisGateway } from "@aso/agents";
-import type {
-  AppListing,
-  AuditReport,
-  AuditStage,
-  DimensionScore,
-  RecommendationSet,
-} from "@aso/schemas";
-import type { AnalysisResults } from "./types";
+import type { RuntimeContext } from "@mastra/core/runtime-context";
+import type { AuditStage } from "@aso/schemas";
 
 export type ProgressStatus = "started" | "completed" | "failed";
 
@@ -16,37 +9,14 @@ export type ProgressEmitter = (
   message?: string,
 ) => void;
 
-export interface AuditRunContext {
-  listing: AppListing;
-  gateway: AnalysisGateway;
-  emit: ProgressEmitter;
-  results: AnalysisResults;
-  dimensions: DimensionScore[] | null;
-  recommendations: RecommendationSet | null;
-  report: AuditReport | null;
-}
 
-export const AUDIT_CONTEXT_KEY = "auditContext";
+export const PROGRESS_EMITTER_KEY = "progressEmitter";
 
-export function createRunContext(input: {
-  listing: AppListing;
-  gateway: AnalysisGateway;
-  emit?: ProgressEmitter;
-}): AuditRunContext {
-  return {
-    listing: input.listing,
-    gateway: input.gateway,
-    emit: input.emit ?? (() => {}),
-    results: {
-      title: null,
-      subtitle: null,
-      description: null,
-      screenshots: null,
-      reviews: null,
-      competitors: null,
-    },
-    dimensions: null,
-    recommendations: null,
-    report: null,
-  };
+const NOOP_EMITTER: ProgressEmitter = () => {};
+
+export function resolveEmit(runtimeContext: RuntimeContext): ProgressEmitter {
+  return (
+    (runtimeContext.get(PROGRESS_EMITTER_KEY) as ProgressEmitter | undefined) ??
+    NOOP_EMITTER
+  );
 }
