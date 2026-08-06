@@ -2,14 +2,17 @@
 
 import type { Conversation } from "@aso/schemas";
 import { useCallback, useState } from "react";
+import { BackendWakeupOverlay } from "@/components/backend-wakeup-overlay";
 import { ChatPanel } from "@/components/chat/chat-panel";
 import { Sidebar } from "@/components/sidebar";
 import { getConversation } from "@/lib/api";
 import { useAudit } from "@/lib/use-audit";
+import { useBackendStatus } from "@/lib/use-backend-status";
 import { useConversations } from "@/lib/use-conversations";
 
 export default function Home() {
-  const { conversations, loading, refresh, remove } = useConversations();
+  const backend = useBackendStatus();
+  const { conversations, loading, refresh, remove } = useConversations(backend.everReady);
 
   const [activeId, setActiveId] = useState<string | null>(null);
   const [activeConversation, setActiveConversation] = useState<Conversation | null>(null);
@@ -32,6 +35,17 @@ export default function Home() {
       void loadConversation(id);
     },
   });
+
+  /**
+   * The instance can sleep again while the tab sits open, so confirm it is
+   * awake before the first request of a run rather than letting it fail.
+   */
+  const submitUrl = useCallback(
+    async (url: string) => {
+      if (await backend.ensureAwake()) await audit.submitUrl(url);
+    },
+    [backend, audit],
+  );
 
   const startNew = useCallback(() => {
     audit.reset();
@@ -58,6 +72,13 @@ export default function Home() {
 
   return (
     <div className="flex h-screen">
+      {backend.blocking && (
+        <BackendWakeupOverlay
+          status={backend.status}
+          elapsedMs={backend.elapsedMs}
+          onRetry={backend.retry}
+        />
+      )}
       <Sidebar
         conversations={conversations}
         activeId={activeId}
@@ -70,7 +91,7 @@ export default function Home() {
         activeConversation={activeId ? activeConversation : null}
         loadingConversation={loadingConversation}
         audit={audit.state}
-        onSubmitUrl={audit.submitUrl}
+        onSubmitUrl={submitUrl}
         onConfirm={audit.confirm}
         onCancel={startNew}
       />

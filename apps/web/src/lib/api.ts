@@ -33,6 +33,27 @@ async function getJson<T>(path: string): Promise<T> {
 }
 
 
+/**
+ * Probes the API health endpoint. Never throws: a cold host (Render free tier
+ * spins the service down when idle) answers with a network error, a gateway
+ * error or nothing at all, and all of those mean the same thing — not up yet.
+ */
+export async function checkHealth(timeoutMs: number): Promise<boolean> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(`${BASE}/healthz`, {
+      signal: controller.signal,
+      cache: "no-store",
+    });
+    return res.ok;
+  } catch {
+    return false;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export function previewApp(url: string): Promise<AuditPreview> {
   return postJson<AuditPreview>("/audit/preview", { url });
 }

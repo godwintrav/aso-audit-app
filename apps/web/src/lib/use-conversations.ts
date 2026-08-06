@@ -4,7 +4,11 @@ import { useCallback, useEffect, useState } from "react";
 import type { ConversationSummary } from "@aso/schemas";
 import { deleteConversation, getConversations } from "./api";
 
-export function useConversations() {
+/**
+ * @param enabled defer the initial load until the API is reachable (see
+ * `useBackendStatus`), so a cold backend doesn't turn into an empty sidebar.
+ */
+export function useConversations(enabled = true) {
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -18,8 +22,8 @@ export function useConversations() {
   }, []);
 
   useEffect(() => {
-    void refresh();
-  }, [refresh]);
+    if (enabled) void refresh();
+  }, [enabled, refresh]);
 
   const remove = useCallback(async (id: string) => {
     await deleteConversation(id);
