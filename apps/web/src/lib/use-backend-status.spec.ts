@@ -3,11 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   KEEPALIVE_IDLE_CUTOFF_MS,
   KEEPALIVE_INTERVAL_MS,
-  MAX_PROBE_INTERVAL_MS,
   OVERLAY_GRACE_MS,
-  PROBE_BACKOFF_FACTOR,
   PROBE_INTERVAL_MS,
-  RATE_LIMITED_BACKOFF_MS,
   WAKE_DEADLINE_MS,
   useBackendStatus,
 } from "./use-backend-status";
@@ -18,12 +15,9 @@ import { probeHealth } from "./api";
 
 const probeHealthMock = vi.mocked(probeHealth);
 
-const AWAKE = { awake: true } as const;
-const ASLEEP = { awake: false } as const;
-
 beforeEach(() => {
   vi.useFakeTimers();
-  probeHealthMock.mockResolvedValue(AWAKE);
+  probeHealthMock.mockResolvedValue(true);
 });
 
 afterEach(() => {
@@ -33,9 +27,9 @@ afterEach(() => {
 
 /**
  * The deadline is only checked after a probe returns, so giving up can lag it
- * by up to one backed-off interval.
+ * by up to one interval.
  */
-const PAST_DEADLINE = WAKE_DEADLINE_MS + MAX_PROBE_INTERVAL_MS * 2;
+const PAST_DEADLINE = WAKE_DEADLINE_MS + PROBE_INTERVAL_MS * 2;
 
 /** Advances fake timers while letting pending promises settle. */
 async function advance(ms: number) {
@@ -56,7 +50,7 @@ describe("useBackendStatus", () => {
   });
 
   it("does not block during the grace period of the first probe", async () => {
-    probeHealthMock.mockResolvedValue(ASLEEP);
+    probeHealthMock.mockResolvedValue(false);
     const { result } = renderHook(() => useBackendStatus());
 
     expect(result.current.status).toBe("checking");
@@ -66,7 +60,7 @@ describe("useBackendStatus", () => {
   });
 
   it("switches to waking and keeps probing until the API answers", async () => {
-    probeHealthMock.mockResolvedValueOnce(ASLEEP).mockResolvedValueOnce(ASLEEP).mockResolvedValue(AWAKE);
+    probeHealthMock.mockResolvedValueOnce(false).mockResolvedValueOnce(false).mockResolvedValue(true);
     const { result } = renderHook(() => useBackendStatus());
 
     await advance(0);
@@ -76,87 +70,14 @@ describe("useBackendStatus", () => {
     await advance(PROBE_INTERVAL_MS);
     expect(result.current.status).toBe("waking");
 
-    await advance(PROBE_INTERVAL_MS * PROBE_BACKOFF_FACTOR);
+    await advance(PROBE_INTERVAL_MS);
     expect(result.current.status).toBe("ready");
     expect(probeHealthMock).toHaveBeenCalledTimes(3);
     expect(result.current.blocking).toBe(false);
   });
 
-  it("eases off between probes instead of polling at a fixed rate", async () => {
-    probeHealthMock.mockResolvedValue(ASLEEP);
-    renderHook(() => useBackendStatus());
-
-    await advance(0);
-    expect(probeHealthMock).toHaveBeenCalledTimes(1);
-
-    // Second probe lands one interval later, the third only after the backoff.
-    await advance(PROBE_INTERVAL_MS);
-    expect(probeHealthMock).toHaveBeenCalledTimes(2);
-
-    await advance(PROBE_INTERVAL_MS);
-    expect(probeHealthMock).toHaveBeenCalledTimes(2);
-
-    await advance(PROBE_INTERVAL_MS * PROBE_BACKOFF_FACTOR - PROBE_INTERVAL_MS);
-    expect(probeHealthMock).toHaveBeenCalledTimes(3);
-  });
-
-  it("never backs off past the ceiling", async () => {
-    probeHealthMock.mockResolvedValue(ASLEEP);
-    renderHook(() => useBackendStatus());
-
-    await advance(60_000);
-    const calls = probeHealthMock.mock.calls.length;
-
-    await advance(MAX_PROBE_INTERVAL_MS);
-    expect(probeHealthMock.mock.calls.length).toBeGreaterThan(calls);
-  });
-
-  it("waits for the delay the host asked for when it pushes back", async () => {
-    probeHealthMock.mockResolvedValue({ awake: false, retryAfterMs: 30_000 });
-    renderHook(() => useBackendStatus());
-
-    await advance(0);
-    expect(probeHealthMock).toHaveBeenCalledTimes(1);
-
-    // The ordinary backoff would have fired several probes by now.
-    await advance(20_000);
-    expect(probeHealthMock).toHaveBeenCalledTimes(1);
-
-    await advance(10_000);
-    expect(probeHealthMock).toHaveBeenCalledTimes(2);
-  });
-
-  it("retreats hard when the platform refuses to wake the instance", async () => {
-    // Render answers `hibernate-rate-limited` with no Retry-After; retrying on
-    // the ordinary cadence would just renew the refusal.
-    probeHealthMock.mockResolvedValue({ awake: false, rateLimited: true });
-    renderHook(() => useBackendStatus());
-
-    await advance(0);
-    expect(probeHealthMock).toHaveBeenCalledTimes(1);
-
-    await advance(MAX_PROBE_INTERVAL_MS);
-    expect(probeHealthMock).toHaveBeenCalledTimes(1);
-
-    await advance(RATE_LIMITED_BACKOFF_MS - MAX_PROBE_INTERVAL_MS);
-    expect(probeHealthMock).toHaveBeenCalledTimes(2);
-  });
-
-  it("still prefers an explicit Retry-After over the refusal backoff", async () => {
-    probeHealthMock.mockResolvedValue({
-      awake: false,
-      rateLimited: true,
-      retryAfterMs: 5_000,
-    });
-    renderHook(() => useBackendStatus());
-
-    await advance(0);
-    await advance(5_000);
-    expect(probeHealthMock).toHaveBeenCalledTimes(2);
-  });
-
   it("counts elapsed time while waking", async () => {
-    probeHealthMock.mockResolvedValue(ASLEEP);
+    probeHealthMock.mockResolvedValue(false);
     const { result } = renderHook(() => useBackendStatus());
 
     await advance(3_000);
@@ -164,7 +85,7 @@ describe("useBackendStatus", () => {
   });
 
   it("gives up after the wake deadline", async () => {
-    probeHealthMock.mockResolvedValue(ASLEEP);
+    probeHealthMock.mockResolvedValue(false);
     const { result } = renderHook(() => useBackendStatus());
 
     await advance(PAST_DEADLINE);
@@ -177,12 +98,12 @@ describe("useBackendStatus", () => {
   });
 
   it("restarts probing when retry is called", async () => {
-    probeHealthMock.mockResolvedValue(ASLEEP);
+    probeHealthMock.mockResolvedValue(false);
     const { result } = renderHook(() => useBackendStatus());
     await advance(PAST_DEADLINE);
     expect(result.current.status).toBe("unreachable");
 
-    probeHealthMock.mockResolvedValue(AWAKE);
+    probeHealthMock.mockResolvedValue(true);
     act(() => result.current.retry());
     await advance(0);
 
@@ -195,7 +116,7 @@ describe("useBackendStatus", () => {
     await advance(0);
     expect(result.current.everReady).toBe(true);
 
-    probeHealthMock.mockResolvedValue(ASLEEP);
+    probeHealthMock.mockResolvedValue(false);
     act(() => result.current.retry());
     await advance(0);
 
@@ -204,7 +125,7 @@ describe("useBackendStatus", () => {
   });
 
   it("stops probing once unmounted", async () => {
-    probeHealthMock.mockResolvedValue(ASLEEP);
+    probeHealthMock.mockResolvedValue(false);
     const { unmount } = renderHook(() => useBackendStatus());
     await advance(PROBE_INTERVAL_MS);
 
@@ -299,7 +220,7 @@ describe("useBackendStatus keepalive", () => {
   });
 
   it("does not ping before the API is known to be up", async () => {
-    probeHealthMock.mockResolvedValue(ASLEEP);
+    probeHealthMock.mockResolvedValue(false);
     renderHook(() => useBackendStatus());
     await advance(0);
 
@@ -330,7 +251,7 @@ describe("useBackendStatus ensureAwake", () => {
     await advance(0);
     expect(result.current.status).toBe("ready");
 
-    probeHealthMock.mockResolvedValueOnce(ASLEEP).mockResolvedValue(AWAKE);
+    probeHealthMock.mockResolvedValueOnce(false).mockResolvedValue(true);
     let resolved: boolean | undefined;
     act(() => {
       void result.current.ensureAwake().then((ok) => {
@@ -352,7 +273,7 @@ describe("useBackendStatus ensureAwake", () => {
     const { result } = renderHook(() => useBackendStatus());
     await advance(0);
 
-    probeHealthMock.mockResolvedValue(ASLEEP);
+    probeHealthMock.mockResolvedValue(false);
     let resolved: boolean | undefined;
     act(() => {
       void result.current.ensureAwake().then((ok) => {
@@ -366,7 +287,7 @@ describe("useBackendStatus ensureAwake", () => {
   });
 
   it("resolves false instead of hanging when the hook unmounts", async () => {
-    probeHealthMock.mockResolvedValue(ASLEEP);
+    probeHealthMock.mockResolvedValue(false);
     const { result, unmount } = renderHook(() => useBackendStatus());
 
     let resolved: boolean | undefined;

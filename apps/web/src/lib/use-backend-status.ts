@@ -13,37 +13,24 @@ export type BackendStatus = "checking" | "waking" | "ready" | "unreachable";
 
 /**
  * Render does not reject requests to a sleeping instance — it holds the
- * connection open until the instance is up, then answers normally. A measured
- * cold start on this service took 42.6s (≈28s spin-up + 14s Node boot), so the
- * probe must be willing to wait longer than the whole cold start.
+ * connection open until the instance is up, then answers normally. Observed
+ * cold starts on this service ranged from 42.6s to 63.7s, so the probe has to
+ * be willing to wait out the slowest one with headroom to spare.
  *
- * This is the single most important value here. A timeout shorter than the
- * cold start aborts every probe in flight, so the wake sequence can never
- * succeed on the request that is actually doing the waking, and the retries
- * pile up connections against the edge instead.
+ * A timeout shorter than the cold start aborts the very request that is doing
+ * the waking, which is how the wake sequence ends up never succeeding.
  */
-export const PROBE_TIMEOUT_MS = 75_000;
-/** Pause after the first failed probe. Grows on each further failure. */
+export const PROBE_TIMEOUT_MS = 90_000;
+/**
+ * Pause between probes. A probe that fails fast means the request never
+ * reached a booting instance at all, so there is nothing to wait out gently.
+ */
 export const PROBE_INTERVAL_MS = 3_000;
-/**
- * Ceiling for the backoff. Probing keeps hammering an edge that is already
- * pushing back otherwise, which can turn a slow start into a stuck one.
- */
-export const MAX_PROBE_INTERVAL_MS = 15_000;
-/** Growth factor applied per consecutive failure. */
-export const PROBE_BACKOFF_FACTOR = 1.5;
-/**
- * Wait this long after the platform refuses a wake request
- * (`x-render-routing: hibernate-rate-limited`), which it sends without a
- * `Retry-After`. Retrying on the ordinary cadence just renews the refusal and
- * the instance never gets to boot, so this deliberately overshoots.
- */
-export const RATE_LIMITED_BACKOFF_MS = 30_000;
 /**
  * Give up (and offer a retry) after this long — room for two full-length
  * probes, so a single slow cold start is never mistaken for a dead service.
  */
-export const WAKE_DEADLINE_MS = 180_000;
+export const WAKE_DEADLINE_MS = 240_000;
 /**
  * A warm API answers in tens of milliseconds; suppressing the overlay for this
  * long keeps the common case free of a loading flash.
@@ -129,12 +116,10 @@ export function useBackendStatus(): BackendStatusState {
     }, 1_000);
 
     void (async () => {
-      let backoff = PROBE_INTERVAL_MS;
-
       while (!cancelled) {
-        const probe = await probeHealth(PROBE_TIMEOUT_MS);
+        const awake = await probeHealth(PROBE_TIMEOUT_MS);
         if (cancelled) return;
-        if (probe.awake) {
+        if (awake) {
           setStatus("ready");
           setEverReady(true);
           settle(true);
@@ -146,14 +131,7 @@ export function useBackendStatus(): BackendStatusState {
           return;
         }
         setStatus("waking");
-
-        // Respect an explicit push-back, retreat hard from a refused wake, and
-        // otherwise ease off gradually: probing is what triggers the wake, so
-        // over-eager retries are what keep the instance from ever booting.
-        await sleep(
-          probe.retryAfterMs ?? (probe.rateLimited ? RATE_LIMITED_BACKOFF_MS : backoff),
-        );
-        backoff = Math.min(backoff * PROBE_BACKOFF_FACTOR, MAX_PROBE_INTERVAL_MS);
+        await sleep(PROBE_INTERVAL_MS);
       }
     })();
 

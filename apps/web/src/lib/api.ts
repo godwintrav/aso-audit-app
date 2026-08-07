@@ -9,6 +9,24 @@ import { getSessionId } from "./session";
 
 const BASE = "/api";
 
+/**
+ * The health probe is the one call that bypasses the proxy and talks to the API
+ * origin directly.
+ *
+ * A request to a hibernating instance is what wakes it, and Render refuses wake
+ * requests arriving from the web service's own egress. Measured at the same
+ * moment against the same sleeping instance: through the proxy it returned
+ * `429 x-render-routing: hibernate-rate-limited` in 0.66s and never woke,
+ * while the identical request straight from a browser was held for 63.7s and
+ * woke it. Only a request from the user's own address reliably wakes the API.
+ *
+ * Every other call stays proxied: once the API is awake the proxy is fine
+ * (1.5s), and same-origin requests avoid preflighting the session header.
+ */
+const HEALTH_URL = process.env.NEXT_PUBLIC_API_URL
+  ? `${process.env.NEXT_PUBLIC_API_URL}/healthz`
+  : `${BASE}/healthz`;
+
 function headers(extra?: Record<string, string>): HeadersInit {
   return { "X-Session-Id": getSessionId(), ...extra };
 }
@@ -48,53 +66,32 @@ async function getJson<T>(path: string): Promise<T> {
 }
 
 
-export interface HealthProbe {
-  /** True only when the API itself answered — not the platform in front of it. */
-  awake: boolean;
-  /** Delay the host asked us to wait for, in ms, when it pushed back. */
-  retryAfterMs?: number;
-  /**
-   * The host refused the request outright rather than passing it to the app.
-   * Probing harder makes this worse, not better — see {@link probeHealth}.
-   */
-  rateLimited?: boolean;
-}
-
 /**
- * Probes the API health endpoint. Never throws — every failure shape means the
- * same thing to the caller: not up yet.
+ * Probes the API health endpoint, reporting whether it is serving. Never
+ * throws — every failure shape means the same thing to the caller: not up yet.
  *
  * A request to a hibernating Render instance is itself the wake trigger: the
- * platform holds the connection open until the app boots (measured at 42.6s on
- * this service) and then answers normally. But it also rate-limits *how often*
- * you may trigger a wake, answering `429` with `x-render-routing:
- * hibernate-rate-limited` and never waking the instance at all. Retrying
- * quickly is therefore actively counterproductive, which is why that case is
- * reported separately for the caller to back off hard on.
+ * platform holds the connection open until the app boots (42.6s to 63.7s
+ * measured on this service) and then answers. The caller must therefore allow
+ * a timeout longer than a whole cold start.
  *
- * Status alone is not sufficient evidence of health either, so success is
- * confirmed against the controller's own contract rather than `res.ok`.
+ * Success is confirmed against the controller's own contract rather than
+ * `res.ok`, so only the app itself can report the app as healthy.
  */
-export async function probeHealth(timeoutMs: number): Promise<HealthProbe> {
+export async function probeHealth(timeoutMs: number): Promise<boolean> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const res = await fetch(`${BASE}/healthz`, {
+    const res = await fetch(HEALTH_URL, {
       signal: controller.signal,
       cache: "no-store",
     });
-
-    // `/healthz` is exempt from our own throttler, so a 429 here is the
-    // platform refusing to wake the instance — push-back, not proof of life.
-    if (res.status === 429) {
-      return { awake: false, rateLimited: true, retryAfterMs: retryAfterMs(res) };
-    }
-    if (!res.ok) return { awake: false };
+    if (!res.ok) return false;
 
     const body = (await res.json().catch(() => null)) as { status?: string } | null;
-    return { awake: body?.status === "ok" };
+    return body?.status === "ok";
   } catch {
-    return { awake: false };
+    return false;
   } finally {
     clearTimeout(timer);
   }
