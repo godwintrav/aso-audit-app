@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common";
 import { APP_GUARD } from "@nestjs/core";
-import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
+import { ThrottlerModule } from "@nestjs/throttler";
+import { SessionThrottlerGuard } from "./common/session-throttler.guard";
 import { AppStoreModule } from "./appstore/appstore.module";
 import { AuditModule } from "./audit/audit.module";
 import { CacheModule } from "./cache/cache.module";
@@ -24,6 +25,6 @@ import { HealthController } from "./health/health.controller";
     AuditModule,
   ],
   controllers: [HealthController],
-  providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
+  providers: [{ provide: APP_GUARD, useClass: SessionThrottlerGuard }],
 })
 export class AppModule {}

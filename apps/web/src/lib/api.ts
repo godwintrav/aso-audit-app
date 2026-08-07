@@ -19,11 +19,26 @@ async function postJson<T>(path: string, body: unknown): Promise<T> {
     headers: headers({ "Content-Type": "application/json" }),
     body: JSON.stringify(body),
   });
+  if (res.status === 429) throw new Error(rateLimitMessage(res));
   if (!res.ok) {
     const detail = await res.json().catch(() => ({}));
     throw new Error((detail as { message?: string }).message ?? `Request failed (${res.status})`);
   }
   return res.json() as Promise<T>;
+}
+
+/** Reads `Retry-After` (delta-seconds form) as milliseconds, if present. */
+function retryAfterMs(res: Response): number | undefined {
+  const seconds = Number(res.headers.get("retry-after"));
+  return Number.isFinite(seconds) && seconds > 0 ? seconds * 1_000 : undefined;
+}
+
+/** Turns a throttled response into something a user can act on. */
+function rateLimitMessage(res: Response): string {
+  const delay = retryAfterMs(res);
+  return delay
+    ? `Too many audits in a short time. Try again in ${Math.ceil(delay / 1_000)}s.`
+    : "Too many audits in a short time. Try again in a moment.";
 }
 
 async function getJson<T>(path: string): Promise<T> {
@@ -33,12 +48,34 @@ async function getJson<T>(path: string): Promise<T> {
 }
 
 
+export interface HealthProbe {
+  /** True only when the API itself answered — not the platform in front of it. */
+  awake: boolean;
+  /** Delay the host asked us to wait for, in ms, when it pushed back. */
+  retryAfterMs?: number;
+  /**
+   * The host refused the request outright rather than passing it to the app.
+   * Probing harder makes this worse, not better — see {@link probeHealth}.
+   */
+  rateLimited?: boolean;
+}
+
 /**
- * Probes the API health endpoint. Never throws: a cold host (Render free tier
- * spins the service down when idle) answers with a network error, a gateway
- * error or nothing at all, and all of those mean the same thing — not up yet.
+ * Probes the API health endpoint. Never throws — every failure shape means the
+ * same thing to the caller: not up yet.
+ *
+ * A request to a hibernating Render instance is itself the wake trigger: the
+ * platform holds the connection open until the app boots (measured at 42.6s on
+ * this service) and then answers normally. But it also rate-limits *how often*
+ * you may trigger a wake, answering `429` with `x-render-routing:
+ * hibernate-rate-limited` and never waking the instance at all. Retrying
+ * quickly is therefore actively counterproductive, which is why that case is
+ * reported separately for the caller to back off hard on.
+ *
+ * Status alone is not sufficient evidence of health either, so success is
+ * confirmed against the controller's own contract rather than `res.ok`.
  */
-export async function checkHealth(timeoutMs: number): Promise<boolean> {
+export async function probeHealth(timeoutMs: number): Promise<HealthProbe> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
@@ -46,9 +83,18 @@ export async function checkHealth(timeoutMs: number): Promise<boolean> {
       signal: controller.signal,
       cache: "no-store",
     });
-    return res.ok;
+
+    // `/healthz` is exempt from our own throttler, so a 429 here is the
+    // platform refusing to wake the instance — push-back, not proof of life.
+    if (res.status === 429) {
+      return { awake: false, rateLimited: true, retryAfterMs: retryAfterMs(res) };
+    }
+    if (!res.ok) return { awake: false };
+
+    const body = (await res.json().catch(() => null)) as { status?: string } | null;
+    return { awake: body?.status === "ok" };
   } catch {
-    return false;
+    return { awake: false };
   } finally {
     clearTimeout(timer);
   }

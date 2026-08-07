@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { checkHealth } from "./api";
+import { probeHealth } from "./api";
 
 /**
  * `checking` — first probe in flight, nothing shown to the user yet.
@@ -11,12 +11,39 @@ import { checkHealth } from "./api";
  */
 export type BackendStatus = "checking" | "waking" | "ready" | "unreachable";
 
-/** A cold Render instance can hold a connection open for a while before answering. */
-export const PROBE_TIMEOUT_MS = 10_000;
-/** Pause between probes, to avoid hammering the host while it boots. */
+/**
+ * Render does not reject requests to a sleeping instance — it holds the
+ * connection open until the instance is up, then answers normally. A measured
+ * cold start on this service took 42.6s (≈28s spin-up + 14s Node boot), so the
+ * probe must be willing to wait longer than the whole cold start.
+ *
+ * This is the single most important value here. A timeout shorter than the
+ * cold start aborts every probe in flight, so the wake sequence can never
+ * succeed on the request that is actually doing the waking, and the retries
+ * pile up connections against the edge instead.
+ */
+export const PROBE_TIMEOUT_MS = 75_000;
+/** Pause after the first failed probe. Grows on each further failure. */
 export const PROBE_INTERVAL_MS = 3_000;
-/** Give up (and offer a retry) after this long. Render cold starts are ~30-60s. */
-export const WAKE_DEADLINE_MS = 120_000;
+/**
+ * Ceiling for the backoff. Probing keeps hammering an edge that is already
+ * pushing back otherwise, which can turn a slow start into a stuck one.
+ */
+export const MAX_PROBE_INTERVAL_MS = 15_000;
+/** Growth factor applied per consecutive failure. */
+export const PROBE_BACKOFF_FACTOR = 1.5;
+/**
+ * Wait this long after the platform refuses a wake request
+ * (`x-render-routing: hibernate-rate-limited`), which it sends without a
+ * `Retry-After`. Retrying on the ordinary cadence just renews the refusal and
+ * the instance never gets to boot, so this deliberately overshoots.
+ */
+export const RATE_LIMITED_BACKOFF_MS = 30_000;
+/**
+ * Give up (and offer a retry) after this long — room for two full-length
+ * probes, so a single slow cold start is never mistaken for a dead service.
+ */
+export const WAKE_DEADLINE_MS = 180_000;
 /**
  * A warm API answers in tens of milliseconds; suppressing the overlay for this
  * long keeps the common case free of a loading flash.
@@ -27,6 +54,16 @@ export const OVERLAY_GRACE_MS = 700;
  * comfortably inside that window keeps an open tab's backend warm.
  */
 export const KEEPALIVE_INTERVAL_MS = 10 * 60_000;
+/**
+ * Stop pinging once the user has been idle this long.
+ *
+ * Keeping the instance up is not free: a free plan bills instance-hours, and
+ * each ping keeps both the web service and the API out of hibernation. A tab
+ * left open and forgotten would otherwise burn the monthly allowance for no
+ * one's benefit. Waking again costs the user a cold start, which is what
+ * `ensureAwake()` exists to cover.
+ */
+export const KEEPALIVE_IDLE_CUTOFF_MS = 20 * 60_000;
 
 export interface BackendStatusState {
   status: BackendStatus;
@@ -92,10 +129,12 @@ export function useBackendStatus(): BackendStatusState {
     }, 1_000);
 
     void (async () => {
+      let backoff = PROBE_INTERVAL_MS;
+
       while (!cancelled) {
-        const ok = await checkHealth(PROBE_TIMEOUT_MS);
+        const probe = await probeHealth(PROBE_TIMEOUT_MS);
         if (cancelled) return;
-        if (ok) {
+        if (probe.awake) {
           setStatus("ready");
           setEverReady(true);
           settle(true);
@@ -107,7 +146,14 @@ export function useBackendStatus(): BackendStatusState {
           return;
         }
         setStatus("waking");
-        await sleep(PROBE_INTERVAL_MS);
+
+        // Respect an explicit push-back, retreat hard from a refused wake, and
+        // otherwise ease off gradually: probing is what triggers the wake, so
+        // over-eager retries are what keep the instance from ever booting.
+        await sleep(
+          probe.retryAfterMs ?? (probe.rateLimited ? RATE_LIMITED_BACKOFF_MS : backoff),
+        );
+        backoff = Math.min(backoff * PROBE_BACKOFF_FACTOR, MAX_PROBE_INTERVAL_MS);
       }
     })();
 
@@ -122,22 +168,42 @@ export function useBackendStatus(): BackendStatusState {
   // changes are not covered here on purpose — the restarted loop settles those.
   useEffect(() => () => settle(false), [settle]);
 
-  // Keep an open tab's instance warm so a long reading session doesn't end in a
-  // cold start. Failures are deliberately not surfaced: interrupting the user
-  // with an overlay they didn't ask for is worse than waking on their next
-  // action, which `ensureAwake()` covers.
+  // Keep the instance warm for someone who is actually using the app, so a long
+  // reading session doesn't end in a cold start — but only for as long as they
+  // are still there, since staying awake spends metered instance-hours.
+  // Failures are deliberately not surfaced: interrupting the user with an
+  // overlay they didn't ask for is worse than waking on their next action,
+  // which `ensureAwake()` covers.
   useEffect(() => {
     if (status !== "ready") return;
 
-    const ping = () => {
-      if (document.visibilityState === "visible") void checkHealth(PROBE_TIMEOUT_MS);
+    let lastActivity = Date.now();
+    const markActive = () => {
+      lastActivity = Date.now();
     };
+
+    const ping = () => {
+      if (document.visibilityState !== "visible") return;
+      if (Date.now() - lastActivity > KEEPALIVE_IDLE_CUTOFF_MS) return;
+      void probeHealth(PROBE_TIMEOUT_MS);
+    };
+
+    const onVisibilityChange = () => {
+      // Returning to the tab is itself a sign of use.
+      if (document.visibilityState === "visible") markActive();
+      ping();
+    };
+
     const timer = setInterval(ping, KEEPALIVE_INTERVAL_MS);
-    document.addEventListener("visibilitychange", ping);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    document.addEventListener("pointerdown", markActive);
+    document.addEventListener("keydown", markActive);
 
     return () => {
       clearInterval(timer);
-      document.removeEventListener("visibilitychange", ping);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      document.removeEventListener("pointerdown", markActive);
+      document.removeEventListener("keydown", markActive);
     };
   }, [status]);
 
